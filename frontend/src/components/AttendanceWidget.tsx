@@ -92,10 +92,13 @@ export default function AttendanceWidget() {
         </div>
       )}
 
-      {isDone && today && (
+      {/* Shown whenever there's a banked total for today, active session or
+          not - a second check-in re-opens the same day's row rather than
+          losing what an earlier session already worked. */}
+      {isDone && today?.workedHours != null && (
         <div className="attendance-widget__row">
-          <span>Today</span>
-          <b>{today.workedHours ?? elapsedLabel(today.checkIn!, new Date(today.checkOut!).getTime())}h</b>
+          <span>Today so far</span>
+          <b>{today.workedHours}h</b>
         </div>
       )}
 
@@ -105,11 +108,7 @@ export default function AttendanceWidget() {
 
       {error && <p className="attendance-widget__error">{error}</p>}
 
-      {isDone ? (
-        <button className="attendance-widget__btn attendance-widget__btn--done" disabled>
-          Checked Out for Today
-        </button>
-      ) : isActive ? (
+      {isActive ? (
         <button className="attendance-widget__btn" disabled={busy} onClick={handleCheckOut}>
           {busy ? '...' : 'Check Out'}
         </button>

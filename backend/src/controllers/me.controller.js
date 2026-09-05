@@ -59,11 +59,6 @@ function respondToPunch(result, response) {
   if (result.error === 'already_checked_in') {
     return response.status(409).json({ message: 'Already checked in today', attendance: result.attendance });
   }
-  if (result.error === 'already_completed') {
-    return response
-      .status(409)
-      .json({ message: 'Already checked out for today', attendance: result.attendance });
-  }
   if (result.error === 'not_checked_in') {
     return response.status(409).json({ message: 'You have not checked in today' });
   }

@@ -145,10 +145,23 @@ async function todayForEmployee(employeeId) {
   return rows[0] ? mapAttendance(rows[0]) : null;
 }
 
+// One row per (employee, date) is a hard schema constraint, so a second
+// check-in the same day re-opens that same row rather than needing a
+// second one - check_in moves to now, check_out clears, and worked_hours
+// is left as whatever the previous segment already banked. checkOutSelf
+// then adds the new segment on top instead of overwriting it, so hours
+// from an earlier session that day are never lost to a later one.
 async function checkInSelf(employeeId) {
   const existing = await todayForEmployee(employeeId);
   if (existing && !existing.checkOut) return { error: 'already_checked_in', attendance: existing };
-  if (existing && existing.checkOut) return { error: 'already_completed', attendance: existing };
+
+  if (existing) {
+    await pool.query(
+      `UPDATE attendance SET check_in = now(), check_out = NULL, status = 'present' WHERE id = $1`,
+      [existing.id]
+    );
+    return { attendance: await findById(existing.id) };
+  }
 
   const { rows } = await pool.query(
     `INSERT INTO attendance (employee_id, attendance_date, check_in, status)
@@ -166,7 +179,7 @@ async function checkOutSelf(employeeId) {
   const { rows } = await pool.query(
     `UPDATE attendance
         SET check_out = now(),
-            worked_hours = ROUND((EXTRACT(EPOCH FROM (now() - check_in)) / 3600.0)::numeric, 2)
+            worked_hours = ROUND(COALESCE(worked_hours, 0) + (EXTRACT(EPOCH FROM (now() - check_in)) / 3600.0)::numeric, 2)
       WHERE id = $1
       RETURNING id`,
     [existing.id]
