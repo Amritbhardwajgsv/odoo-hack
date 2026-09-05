@@ -148,6 +148,39 @@ export interface Contract {
   createdAt: string;
 }
 
+export type AttendanceStatus = 'present' | 'late' | 'absent' | 'on_leave' | 'exception';
+
+export const ATTENDANCE_STATUSES: AttendanceStatus[] = [
+  'present',
+  'late',
+  'absent',
+  'on_leave',
+  'exception',
+];
+
+export const ATTENDANCE_STATUS_LABELS: Record<AttendanceStatus, string> = {
+  present: 'Present',
+  late: 'Late',
+  absent: 'Absent',
+  on_leave: 'On Leave',
+  exception: 'Exception',
+};
+
+export interface Attendance {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  attendanceDate: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number | null;
+  status: AttendanceStatus;
+  isManualCorrection: boolean;
+  correctedBy: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface SalaryStructure {
   id: string;
   name: string;

@@ -11,6 +11,7 @@ const authRouter = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
 const employeesRouter = require('./routes/employees.routes');
 const contractsRouter = require('./routes/contracts.routes');
+const attendanceRouter = require('./routes/attendance.routes');
 const {
   jobPositionsRouter,
   workingSchedulesRouter,
@@ -33,6 +34,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', requireAuth, requireRole('admin'), usersRouter);
 app.use('/api/employees', requireAuth, requireRole(...HR_STAFF), employeesRouter);
 app.use('/api/contracts', requireAuth, requireRole(...HR_STAFF), contractsRouter);
+app.use('/api/attendance', requireAuth, requireRole(...HR_STAFF), attendanceRouter);
 app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPositionsRouter);
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
 app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);

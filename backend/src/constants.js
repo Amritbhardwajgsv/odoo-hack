@@ -21,6 +21,8 @@ const EMPLOYEE_STATUSES = ['active', 'terminated'];
 // wireframes and the payroll flow use.
 const CONTRACT_STATUSES = ['draft', 'active', 'expired', 'terminated'];
 
+const ATTENDANCE_STATUSES = ['present', 'late', 'absent', 'on_leave', 'exception'];
+
 const PASSWORD_SALT_ROUNDS = 10;
 
 // Most-privileged first. Used to decide which single page opens after
@@ -33,6 +35,7 @@ module.exports = {
   DEPARTMENTS,
   EMPLOYEE_STATUSES,
   CONTRACT_STATUSES,
+  ATTENDANCE_STATUSES,
   PASSWORD_SALT_ROUNDS,
   ROLE_PRIORITY,
 };
