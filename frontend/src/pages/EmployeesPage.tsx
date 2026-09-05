@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import {
@@ -11,6 +12,7 @@ import {
   type WorkingSchedule,
 } from '../types';
 import './shared.css';
+import './employees.css';
 
 const EMPLOYEE_TYPES = ['full_time', 'part_time', 'contract'];
 const EMPLOYEE_TYPE_LABELS: Record<string, string> = {
@@ -19,15 +21,24 @@ const EMPLOYEE_TYPE_LABELS: Record<string, string> = {
   contract: 'Contract',
 };
 
-type PanelState = { mode: 'create' } | { mode: 'edit'; employee: Employee } | null;
+export function initials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
 
 export default function EmployeesPage() {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
   const [workingSchedules, setWorkingSchedules] = useState<WorkingSchedule[]>([]);
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<Department | ''>('');
-  const [panel, setPanel] = useState<PanelState>(null);
+  const [view, setView] = useState<'kanban' | 'list'>('kanban');
+  const [creating, setCreating] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function loadEmployees() {
@@ -37,6 +48,7 @@ export default function EmployeesPage() {
     const query = params.toString();
     try {
       setEmployees(await api.get<Employee[]>(`/api/employees${query ? `?${query}` : ''}`));
+      setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Failed to load employees');
     }
@@ -51,7 +63,7 @@ export default function EmployeesPage() {
       setJobPositions(positions);
       setWorkingSchedules(schedules);
     } catch {
-      // Non-fatal - the form's dropdowns just come up empty.
+      // Non-fatal - the create form's dropdowns just come up empty.
     }
   }
 
@@ -64,30 +76,28 @@ export default function EmployeesPage() {
     loadLookups();
   }, []);
 
-  function closePanel() {
-    setPanel(null);
-  }
-
-  function onSaved() {
-    closePanel();
-    loadEmployees();
-  }
-
   return (
     <div>
       <AppHeader />
       <div className="admin-page">
         <header className="admin-page__header">
-          <h1>Employees</h1>
+          <div>
+            <h1>Employees</h1>
+            <p className="admin-page__subtitle">
+              {view === 'kanban'
+                ? 'Default view: Kanban'
+                : 'List view for sort, filter and bulk scanning'}
+            </p>
+          </div>
         </header>
 
         <div className="admin-page__toolbar">
-          <button className="btn btn--primary" onClick={() => setPanel({ mode: 'create' })}>
-            + New Employee
+          <button className="btn btn--primary" onClick={() => setCreating(true)}>
+            NEW
           </button>
           <input
             className="search-input"
-            placeholder="Search by name or email..."
+            placeholder="Search employees..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -95,61 +105,113 @@ export default function EmployeesPage() {
             value={departmentFilter}
             onChange={(event) => setDepartmentFilter(event.target.value as Department | '')}
           >
-            <option value="">Department Filter</option>
+            <option value="">All departments</option>
             {DEPARTMENTS.map((department) => (
               <option key={department} value={department}>
                 {DEPARTMENT_LABELS[department]}
               </option>
             ))}
           </select>
+          <div className="view-toggle">
+            <button
+              className={view === 'kanban' ? 'is-active' : ''}
+              onClick={() => setView('kanban')}
+            >
+              Kanban
+            </button>
+            <button className={view === 'list' ? 'is-active' : ''} onClick={() => setView('list')}>
+              List
+            </button>
+          </div>
         </div>
 
         {loadError && <p className="error-banner">{loadError}</p>}
 
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Department</th>
-              <th>Job Position</th>
-              <th>Manager</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        {view === 'kanban' ? (
+          <div className="kanban">
             {employees.map((employee) => (
-              <tr key={employee.id} onClick={() => setPanel({ mode: 'edit', employee })}>
-                <td>{employee.fullName}</td>
-                <td>{DEPARTMENT_LABELS[employee.department]}</td>
-                <td>{employee.jobPositionTitle ?? '-'}</td>
-                <td>{employee.managerName ?? '-'}</td>
-                <td>
+              <button
+                key={employee.id}
+                className="kanban-card"
+                onClick={() => navigate(`/employees/${employee.id}`)}
+              >
+                <div className="kanban-card__top">
+                  <span className="avatar">{initials(employee.fullName)}</span>
+                  <div>
+                    <strong>{employee.fullName}</strong>
+                    <span className="kanban-card__role">
+                      {employee.jobPositionTitle ?? 'No job position'}
+                    </span>
+                  </div>
+                </div>
+                <div className="kanban-card__foot">
+                  <span className="kanban-card__dept">
+                    {DEPARTMENT_LABELS[employee.department]}
+                  </span>
                   <span
-                    className={`status-pill ${employee.status === 'active' ? 'status-pill--active' : ''}`}
+                    className={`dot-status ${employee.status === 'active' ? 'dot-status--active' : ''}`}
                   >
                     {employee.status === 'active' ? 'Active' : 'Terminated'}
                   </span>
-                </td>
-              </tr>
+                </div>
+              </button>
             ))}
-            {employees.length === 0 && (
+            {employees.length === 0 && <p className="empty-note">No employees found.</p>}
+          </div>
+        ) : (
+          <table className="admin-table">
+            <thead>
               <tr>
-                <td colSpan={5} className="empty-row">
-                  No employees found.
-                </td>
+                <th>Employee</th>
+                <th>Work Email</th>
+                <th>Job Position</th>
+                <th>Department</th>
+                <th>Status</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {employees.map((employee) => (
+                <tr key={employee.id} onClick={() => navigate(`/employees/${employee.id}`)}>
+                  <td>{employee.fullName}</td>
+                  <td>{employee.email}</td>
+                  <td>{employee.jobPositionTitle ?? '-'}</td>
+                  <td>{DEPARTMENT_LABELS[employee.department]}</td>
+                  <td>
+                    <span
+                      className={`status-pill ${employee.status === 'active' ? 'status-pill--active' : ''}`}
+                    >
+                      {employee.status === 'active' ? 'Active' : 'Terminated'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {employees.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="empty-row">
+                    No employees found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
 
-        {panel && (
-          <EmployeePanel
-            panel={panel}
+        <p className="admin-page__note">
+          {view === 'kanban'
+            ? 'Kanban is good for browsing; clicking a card opens the same Employee Form used everywhere else.'
+            : 'The list view is the main entry point for opening a specific employee record quickly.'}
+        </p>
+
+        {creating && (
+          <CreateEmployeePanel
             employees={employees}
             jobPositions={jobPositions}
             workingSchedules={workingSchedules}
-            onClose={closePanel}
-            onSaved={onSaved}
+            onClose={() => setCreating(false)}
+            onSaved={() => {
+              setCreating(false);
+              loadEmployees();
+            }}
           />
         )}
       </div>
@@ -157,65 +219,56 @@ export default function EmployeesPage() {
   );
 }
 
-function EmployeePanel({
-  panel,
+function CreateEmployeePanel({
   employees,
   jobPositions,
   workingSchedules,
   onClose,
   onSaved,
 }: {
-  panel: { mode: 'create' } | { mode: 'edit'; employee: Employee };
   employees: Employee[];
   jobPositions: JobPosition[];
   workingSchedules: WorkingSchedule[];
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const isEdit = panel.mode === 'edit';
-  const editing = isEdit ? panel.employee : null;
-
-  const [fullName, setFullName] = useState(editing?.fullName ?? '');
-  const [email, setEmail] = useState(editing?.email ?? '');
-  const [phone, setPhone] = useState(editing?.phone ?? '');
-  const [department, setDepartment] = useState<Department>(editing?.department ?? 'engineering');
-  const [jobPositionId, setJobPositionId] = useState(editing?.jobPositionId ?? '');
-  const [managerId, setManagerId] = useState(editing?.managerId ?? '');
-  const [workingScheduleId, setWorkingScheduleId] = useState(editing?.workingScheduleId ?? '');
-  const [employeeType, setEmployeeType] = useState(editing?.employeeType ?? 'full_time');
-  const [status, setStatus] = useState<EmployeeStatus>(editing?.status ?? 'active');
-  const [dateJoined, setDateJoined] = useState(
-    editing?.dateJoined ? editing.dateJoined.slice(0, 10) : ''
-  );
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [department, setDepartment] = useState<Department>('engineering');
+  const [jobPositionId, setJobPositionId] = useState('');
+  const [managerId, setManagerId] = useState('');
+  const [workingScheduleId, setWorkingScheduleId] = useState('');
+  const [employeeType, setEmployeeType] = useState('full_time');
+  const [status, setStatus] = useState<EmployeeStatus>('active');
+  const [dateJoined, setDateJoined] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
+  const [company, setCompany] = useState('');
+  const [withLogin, setWithLogin] = useState(false);
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const possibleManagers = employees.filter((employee) => employee.id !== editing?.id);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
-
-    const payload = {
-      fullName,
-      email,
-      phone: phone || null,
-      department,
-      jobPositionId: jobPositionId || null,
-      managerId: managerId || null,
-      workingScheduleId: workingScheduleId || null,
-      employeeType,
-      status,
-      dateJoined,
-    };
-
     try {
-      if (isEdit && editing) {
-        await api.patch(`/api/employees/${editing.id}`, payload);
-      } else {
-        await api.post('/api/employees', payload);
-      }
+      await api.post('/api/employees', {
+        fullName,
+        email,
+        phone: phone || null,
+        department,
+        jobPositionId: jobPositionId || null,
+        managerId: managerId || null,
+        workingScheduleId: workingScheduleId || null,
+        employeeType,
+        status,
+        dateJoined,
+        workLocation: workLocation || null,
+        company: company || null,
+        ...(withLogin ? { account: { password, roles: ['employee'], isActive: true } } : {}),
+      });
       onSaved();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
@@ -227,30 +280,19 @@ function EmployeePanel({
   return (
     <div className="panel-backdrop" onClick={onClose}>
       <div className="panel" onClick={(event) => event.stopPropagation()}>
-        <h2>{isEdit ? 'Edit Employee' : 'New Employee'}</h2>
-
+        <h2>New Employee</h2>
         <form onSubmit={handleSubmit}>
           <label>Full Name *</label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
-            required
-          />
+          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
 
-          <label>Email *</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
+          <label>Work Email *</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
 
           <label>Phone</label>
-          <input type="text" value={phone} onChange={(event) => setPhone(event.target.value)} />
+          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
 
           <label>Department *</label>
-          <select value={department} onChange={(event) => setDepartment(event.target.value as Department)}>
+          <select value={department} onChange={(e) => setDepartment(e.target.value as Department)}>
             {DEPARTMENTS.map((d) => (
               <option key={d} value={d}>
                 {DEPARTMENT_LABELS[d]}
@@ -259,7 +301,7 @@ function EmployeePanel({
           </select>
 
           <label>Job Position</label>
-          <select value={jobPositionId} onChange={(event) => setJobPositionId(event.target.value)}>
+          <select value={jobPositionId} onChange={(e) => setJobPositionId(e.target.value)}>
             <option value="">None</option>
             {jobPositions.map((jp) => (
               <option key={jp.id} value={jp.id}>
@@ -269,20 +311,17 @@ function EmployeePanel({
           </select>
 
           <label>Manager</label>
-          <select value={managerId} onChange={(event) => setManagerId(event.target.value)}>
+          <select value={managerId} onChange={(e) => setManagerId(e.target.value)}>
             <option value="">None</option>
-            {possibleManagers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.fullName}
+            {employees.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.fullName}
               </option>
             ))}
           </select>
 
           <label>Working Schedule</label>
-          <select
-            value={workingScheduleId}
-            onChange={(event) => setWorkingScheduleId(event.target.value)}
-          >
+          <select value={workingScheduleId} onChange={(e) => setWorkingScheduleId(e.target.value)}>
             <option value="">None</option>
             {workingSchedules.map((ws) => (
               <option key={ws.id} value={ws.id}>
@@ -291,8 +330,14 @@ function EmployeePanel({
             ))}
           </select>
 
+          <label>Work Location</label>
+          <input type="text" value={workLocation} onChange={(e) => setWorkLocation(e.target.value)} />
+
+          <label>Company</label>
+          <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} />
+
           <label>Employee Type *</label>
-          <select value={employeeType} onChange={(event) => setEmployeeType(event.target.value)}>
+          <select value={employeeType} onChange={(e) => setEmployeeType(e.target.value)}>
             {EMPLOYEE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {EMPLOYEE_TYPE_LABELS[type]}
@@ -301,18 +346,35 @@ function EmployeePanel({
           </select>
 
           <label>Status *</label>
-          <select value={status} onChange={(event) => setStatus(event.target.value as EmployeeStatus)}>
+          <select value={status} onChange={(e) => setStatus(e.target.value as EmployeeStatus)}>
             <option value="active">Active</option>
             <option value="terminated">Terminated</option>
           </select>
 
           <label>Date Joined *</label>
-          <input
-            type="date"
-            value={dateJoined}
-            onChange={(event) => setDateJoined(event.target.value)}
-            required
-          />
+          <input type="date" value={dateJoined} onChange={(e) => setDateJoined(e.target.value)} required />
+
+          <label className="inline-check">
+            <input
+              type="checkbox"
+              checked={withLogin}
+              onChange={(e) => setWithLogin(e.target.checked)}
+            />
+            Also create a login account
+          </label>
+
+          {withLogin && (
+            <>
+              <label>Password *</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </>
+          )}
 
           {error && <p className="panel__error">{error}</p>}
 
@@ -321,7 +383,7 @@ function EmployeePanel({
               Cancel
             </button>
             <button type="submit" className="btn btn--primary" disabled={submitting}>
-              {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Employee'}
+              {submitting ? 'Saving...' : 'Create Employee'}
             </button>
           </div>
         </form>

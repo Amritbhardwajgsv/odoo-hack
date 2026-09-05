@@ -59,6 +59,18 @@ VALUES
    'contract', 'active', DATE '2025-07-21')
 ON CONFLICT (email) DO NOTHING;
 
+-- work details shown on the employee form
+UPDATE employees e SET work_location = v.location, company = 'PeoplePay360 Pvt Ltd'
+  FROM (VALUES
+    ('rhea@peoplepay360.com',   'Bengaluru'),
+    ('neha@peoplepay360.com',   'Mumbai'),
+    ('karan@peoplepay360.com',  'Mumbai'),
+    ('arjun@peoplepay360.com',  'Bengaluru'),
+    ('ishita@peoplepay360.com', 'Remote'),
+    ('vikram@peoplepay360.com', 'Delhi')
+  ) AS v(email, location)
+ WHERE e.email = v.email AND e.work_location IS NULL;
+
 -- reporting lines
 UPDATE employees SET manager_id = (SELECT id FROM employees WHERE email = 'rhea@peoplepay360.com')
  WHERE email IN ('arjun@peoplepay360.com', 'ishita@peoplepay360.com', 'vikram@peoplepay360.com')

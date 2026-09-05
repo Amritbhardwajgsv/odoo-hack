@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import UsersPage from './pages/UsersPage';
 import EmployeesPage from './pages/EmployeesPage';
+import EmployeeDetailPage from './pages/EmployeeDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -20,6 +21,14 @@ function App() {
             element={
               <ProtectedRoute roles={[...HR_STAFF]}>
                 <EmployeesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees/:id"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <EmployeeDetailPage />
               </ProtectedRoute>
             }
           />

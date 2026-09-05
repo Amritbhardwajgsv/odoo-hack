@@ -84,8 +84,29 @@ export interface Employee {
   employeeType: string;
   status: EmployeeStatus;
   dateJoined: string;
+  workLocation: string | null;
+  company: string | null;
+  personalEmail: string | null;
+  personalPhone: string | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  bankAccount: string | null;
   hasAccount: boolean;
+  account: { id: string; roles: Role[]; isActive: boolean } | null;
   createdAt: string;
+}
+
+export interface EmployeeCounts {
+  contracts: number;
+  attendance: number;
+  timeOff: number;
+  allocations: number;
+}
+
+export interface EmployeeDetail extends Employee {
+  counts: EmployeeCounts;
 }
 
 export interface JobPosition {

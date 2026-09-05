@@ -1,0 +1,290 @@
+.admin-page__subtitle {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-page__note {
+  margin: 24px 0 16px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.crumb {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crumb:hover {
+  color: var(--color-primary-dark);
+}
+
+/* ---------------------------------------------------------- view toggle */
+.view-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.view-toggle button {
+  padding: 9px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-toggle button.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* ---------------------------------------------------------------- kanban */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.kanban-card {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kanban-card:hover {
+  border-color: var(--color-primary);
+}
+
+.kanban-card__top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.kanban-card__top strong {
+  display: block;
+  font-size: 15px;
+}
+
+.kanban-card__role {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.kanban-card__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban-card__dept {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.dot-status {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.dot-status::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.dot-status--active {
+  color: var(--color-success);
+}
+
+.dot-status--active::before {
+  background: var(--color-success);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 10px;
+  background: var(--color-primary-tint);
+  color: var(--color-primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avatar--lg {
+  width: 76px;
+  height: 76px;
+  flex-basis: 76px;
+  border-radius: 14px;
+  font-size: 22px;
+}
+
+.empty-note {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------- employee detail */
+.detail-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.smart-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.smart-button {
+  padding: 9px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detail-card {
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.detail-identity {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.detail-identity h2 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+
+.detail-identity__role,
+.detail-identity__contact {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.detail-identity__contact {
+  margin-top: 6px;
+}
+
+.tabs {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs button {
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tabs button.is-active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 40px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.field > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.field input:disabled,
+.field select:disabled {
+  opacity: 1;
+  border-color: transparent;
+  background: var(--color-surface-alt);
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 16px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.inline-check input {
+  width: auto;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+  .field {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .detail-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

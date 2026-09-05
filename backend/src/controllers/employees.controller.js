@@ -21,6 +21,16 @@ const employeeSchema = z.object({
   employeeType: z.string().min(1).optional().default('full_time'),
   status: z.enum(EMPLOYEE_STATUSES).optional().default('active'),
   dateJoined: z.string().min(1),
+  workLocation: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  // Private Information tab
+  personalEmail: z.string().email().nullable().optional().or(z.literal('')),
+  personalPhone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional().or(z.literal('')),
+  emergencyContactName: z.string().nullable().optional(),
+  emergencyContactPhone: z.string().nullable().optional(),
+  bankAccount: z.string().nullable().optional(),
   account: accountSchema.optional(),
 });
 
@@ -44,7 +54,7 @@ async function list(request, response) {
 }
 
 async function getById(request, response) {
-  const employee = await employeesService.findById(request.params.id);
+  const employee = await employeesService.findByIdWithCounts(request.params.id);
   if (!employee) return response.status(404).json({ message: 'Employee not found' });
   response.json(employee);
 }

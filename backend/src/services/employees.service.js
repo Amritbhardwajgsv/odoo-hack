@@ -33,6 +33,15 @@ function mapEmployee(row) {
     employeeType: row.employee_type,
     status: row.status,
     dateJoined: row.date_joined,
+    workLocation: row.work_location,
+    company: row.company,
+    personalEmail: row.personal_email,
+    personalPhone: row.personal_phone,
+    address: row.address,
+    dateOfBirth: row.date_of_birth,
+    emergencyContactName: row.emergency_contact_name,
+    emergencyContactPhone: row.emergency_contact_phone,
+    bankAccount: row.bank_account,
     hasAccount: row.account_id !== null,
     // The password itself is a one-way bcrypt hash and is never returned.
     account: row.account_id
@@ -53,6 +62,15 @@ const COLUMN_MAP = {
   employeeType: 'employee_type',
   status: 'status',
   dateJoined: 'date_joined',
+  workLocation: 'work_location',
+  company: 'company',
+  personalEmail: 'personal_email',
+  personalPhone: 'personal_phone',
+  address: 'address',
+  dateOfBirth: 'date_of_birth',
+  emergencyContactName: 'emergency_contact_name',
+  emergencyContactPhone: 'emergency_contact_phone',
+  bankAccount: 'bank_account',
 };
 
 async function list({ search, department, status } = {}) {
@@ -82,31 +100,51 @@ async function findById(id) {
   return rows[0] ? mapEmployee(rows[0]) : null;
 }
 
+// Counts behind the employee form's smart buttons.
+async function relatedCounts(id) {
+  const { rows } = await pool.query(
+    `SELECT (SELECT count(*) FROM contracts         WHERE employee_id = $1)::int AS contracts,
+            (SELECT count(*) FROM attendance        WHERE employee_id = $1)::int AS attendance,
+            (SELECT count(*) FROM time_off_requests WHERE employee_id = $1)::int AS time_off,
+            (SELECT count(*) FROM time_off_allocations WHERE employee_id = $1)::int AS allocations`,
+    [id]
+  );
+  return {
+    contracts: rows[0].contracts,
+    attendance: rows[0].attendance,
+    timeOff: rows[0].time_off,
+    allocations: rows[0].allocations,
+  };
+}
+
+async function findByIdWithCounts(id) {
+  const employee = await findById(id);
+  if (!employee) return null;
+  return { ...employee, counts: await relatedCounts(id) };
+}
+
+// Driven by COLUMN_MAP so adding a form field in one place is enough.
 async function insertEmployee(data, client) {
+  const columns = [];
+  const values = [];
+
+  for (const [key, column] of Object.entries(COLUMN_MAP)) {
+    if (data[key] !== undefined) {
+      columns.push(column);
+      values.push(data[key] === '' ? null : data[key]);
+    }
+  }
+
+  const placeholders = columns.map((_, index) => `$${index + 1}`);
   const { rows } = await client.query(
-    `INSERT INTO employees
-       (full_name, email, phone, department, job_position_id, manager_id,
-        working_schedule_id, employee_type, status, date_joined)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     RETURNING id`,
-    [
-      data.fullName,
-      data.email,
-      data.phone || null,
-      data.department,
-      data.jobPositionId || null,
-      data.managerId || null,
-      data.workingScheduleId || null,
-      data.employeeType,
-      data.status,
-      data.dateJoined,
-    ]
+    `INSERT INTO employees (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`,
+    values
   );
   return rows[0].id;
 }
 
 // Creating the employee and their login account together has to be atomic,
-// otherwise a failed account insert leaves an employee nobody can sign in as.
+// otherwise a failed account insert leaves an employee nobody can sye sign in as.
 async function create(employeeData, accountData) {
   const client = await pool.connect();
   try {
@@ -203,4 +241,4 @@ async function update(id, employeeData, accountData) {
   }
 }
 
-module.exports = { list, findById, create, update };
+module.exports = { list, findById, findByIdWithCounts, create, update };
