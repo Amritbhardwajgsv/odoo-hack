@@ -12,11 +12,11 @@ const employeesRouter = require('./routes/employees.routes');
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
-  .split(',')
-  .map((origin) => origin.trim());
-
-app.use(cors({ origin: allowedOrigins }));
+// The frontend isn't deployed alongside this API and has no fixed origin,
+// so CORS is left open here; set CORS_ORIGIN (comma-separated) to lock it
+// down to specific origins later.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(',').map((origin) => origin.trim()) } : undefined));
 app.use(express.json());
 app.use(requestLogger);
 app.use('/api/health', healthRouter);
