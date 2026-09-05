@@ -13,11 +13,11 @@
 
 INSERT INTO employees
   (full_name, email, phone, department, job_position_id, working_schedule_id,
-   employee_type, status, date_joined)
+   employee_type, status, date_joined, company)
 SELECT v.full_name, v.email, v.phone, v.department::department_type,
        (SELECT id FROM job_positions WHERE department = v.department::department_type LIMIT 1),
        (SELECT id FROM working_schedules WHERE name = 'Standard 9-to-5' LIMIT 1),
-       'full_time', 'active', CURRENT_DATE
+       'full_time', 'active', CURRENT_DATE, 'PeoplePay360 Pvt Ltd'
   FROM (VALUES
     ('Test Employee',         'test.employee@peoplepay360.com',        '+91 90000 00001', 'engineering'),
     ('Test HR Manager',       'test.hrmanager@peoplepay360.com',       '+91 90000 00002', 'hr'),
@@ -44,3 +44,8 @@ SELECT e.id, e.email, '$2a$10$syonoFj3Jed3dh.8uVmDAeVbZb3RBsC25ps98dGYJRGyqzZK1n
   ) AS v(email, roles)
   JOIN employees e ON e.email = v.email
 ON CONFLICT (email) DO NOTHING;
+
+-- The seeded admin account (db/seed.js seedAdmin) predates the company
+-- field and never sets it - backfilled here so the Payroll Dashboard's
+-- Company filter has full coverage instead of one silent gap.
+UPDATE employees SET company = 'PeoplePay360 Pvt Ltd' WHERE company IS NULL;

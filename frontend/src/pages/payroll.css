@@ -405,113 +405,190 @@
 }
 
 /* --------------------------------------------------------- payroll dashboard */
-.dash-columns {
+.metric-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.metric-card > span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.metric-card > strong {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.metric-delta {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.metric-delta--up { color: var(--color-success); }
+.metric-delta--down { color: var(--color-danger); }
+
+.dash-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
   align-items: start;
 }
 
-.dash-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
-}
-
-.dash-window {
+.chart-source {
+  margin: -6px 0 14px;
   color: var(--color-text-muted);
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: normal;
+  font-size: 11px;
 }
 
-.dash-status-list {
+.chart-subheading {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------- SVG charts */
+.chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-bar {
+  fill: var(--color-primary);
+}
+
+.chart-bar-value {
+  fill: var(--color-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chart-axis-label {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.chart-line {
+  stroke: var(--color-primary-dark);
+  stroke-width: 2.5;
+}
+
+.chart-dot {
+  fill: var(--color-primary-dark);
+}
+
+.chart-peak-label {
+  fill: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------- status stacked bar */
+.status-split {
+  margin-bottom: 22px;
+}
+
+.chart-stack {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-surface-alt);
+}
+
+.chart-stack__seg {
+  display: block;
+  height: 100%;
+}
+
+.chart-stack__seg--paid { background: var(--color-success); }
+.chart-stack__seg--done { background: #60a5fa; }
+.chart-stack__seg--pending { background: #fbbf24; }
+.chart-stack__seg--warning { background: var(--color-danger); }
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.chart-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.chart-legend__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ------------------------------------------------------------------ alerts */
+.alert-list {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-.dash-status-list li {
+.alert-list__item {
+  padding: 8px 12px;
+  border-left: 3px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.alert-list__item--blocking { border-left-color: var(--color-danger); }
+.alert-list__item--advisory { border-left-color: #fbbf24; }
+
+/* ------------------------------------------------------- attendance stats */
+.stat-lines {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-lines li {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--color-border);
 }
 
-.dash-status-list li:last-child { border-bottom: none; }
-
-.dash-mini-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 14px;
-}
-
-.dash-mini-stats div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.dash-mini-stats b { font-size: 20px; font-weight: 700; }
-.dash-mini-stats span { color: var(--color-text-muted); font-size: 12px; }
-
-.dash-mini-stats--warn b { font-size: 22px; }
-
-/* Simple CSS-bar trend, matching the app's no-chart-library style. */
-.dash-trend {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dash-trend li {
-  display: grid;
-  grid-template-columns: 130px 1fr auto;
-  align-items: center;
-  gap: 12px;
-}
-
-.dash-trend__label {
-  color: var(--color-text);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dash-trend__label em {
-  color: var(--color-text-muted);
-  font-style: normal;
-}
-
-.dash-trend__bar-track {
-  height: 8px;
-  border-radius: 999px;
-  background: var(--color-surface-alt);
-  overflow: hidden;
-}
-
-.dash-trend__bar {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--color-primary);
-}
-
-.dash-trend__bar--alt { background: var(--color-primary-dark); }
-
-.dash-trend__value {
-  font-size: 12px;
-  white-space: nowrap;
-}
+.stat-lines li:last-child { border-bottom: none; }
+.stat-lines b { color: var(--color-text); font-weight: 600; }
 
 @media (max-width: 900px) {
   .payrun-card {
@@ -525,11 +602,7 @@
     grid-template-columns: 1fr;
     gap: 6px;
   }
-  .dash-columns {
+  .dash-grid-3 {
     grid-template-columns: 1fr;
-  }
-  .dash-trend li {
-    grid-template-columns: 90px 1fr auto;
-    gap: 8px;
   }
 }

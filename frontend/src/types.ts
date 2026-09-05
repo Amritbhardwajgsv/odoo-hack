@@ -456,48 +456,76 @@ export interface PayrunPayslips {
   uncomputed: { id: string; fullName: string; department: Department }[];
 }
 
-export interface DashboardPayrunOption {
-  id: string;
-  name: string;
-  periodStart: string;
-  periodEnd: string;
-  status: PayrunStatus;
+export interface PayrollDashboardFilters {
+  period: string; // 'YYYY-MM'
+  department: Department | null;
+  employeeType: string | null;
+  company: string | null;
+}
+
+export interface PayrollDashboardOptions {
+  departments: Department[];
+  employeeTypes: string[];
+  companies: string[];
+  periods: string[]; // 'YYYY-MM', newest first
+}
+
+export interface DashboardStatusSegment {
+  key: 'paid' | 'done' | 'pending' | 'warning';
+  label: string;
+  count: number;
+  pct: number;
+}
+
+export interface DashboardAlert {
+  severity: 'blocking' | 'advisory';
+  message: string;
+}
+
+export interface DashboardAttendance {
+  present: number;
+  late: number;
+  absent: number;
+  onLeave: number;
+  exception: number;
+  overtime: number;
+  missingCheckouts: number;
+  manualEdits: number;
+  coveragePct: number;
+  healthPct: number;
+}
+
+export interface DashboardTimeOffRow {
+  typeId: string;
+  typeName: string;
+  approvedDays: number;
+  pending: number;
+  remainingBalance: number | null; // null = type has no allocation model (N/A)
+}
+
+export interface DashboardDepartmentRow {
+  department: Department;
+  headcount: number;
+  monthlySalary: number;
 }
 
 export interface PayrollDashboard {
-  filters: { department: Department | null; employeeType: string | null; payrunId: string | null };
-  options: { payruns: DashboardPayrunOption[]; employeeTypes: string[] };
-  salaryTotals: { gross: number; net: number; payslipCount: number; employeeCount: number };
-  payslipStatus: { status: PayslipStatus; count: number }[];
-  salaryByDepartment: { department: Department; gross: number; net: number; headcount: number }[];
-  salaryTrend: {
-    payrunId: string;
-    payrunName: string;
-    periodStart: string;
-    status: PayrunStatus;
-    gross: number;
-    net: number;
-  }[];
-  attendance: {
-    present: number;
-    late: number;
-    absent: number;
-    onLeave: number;
-    exception: number;
-    total: number;
+  filters: PayrollDashboardFilters;
+  options: PayrollDashboardOptions;
+  metrics: {
+    totalNetPaid: { value: number; deltaPct: number };
+    payslipsGenerated: { total: number; paid: number; pending: number };
+    avgSalaryPerEmployee: { value: number };
+    approvedTimeOffDays: { value: number };
+    attendanceHealth: { pct: number };
   };
-  timeOff: { pending: number; approved: number; refused: number; allocatedRemaining: number };
-  warnings: {
-    blocking: number;
-    advisory: number;
-    items: {
-      severity: 'blocking' | 'advisory';
-      message: string;
-      employeeName: string;
-      payrunName: string;
-      payslipId: string;
-    }[];
-  };
+  salaryByDepartment: { department: Department; net: number }[];
+  salaryTrend: { month: string; net: number }[];
+  payslipStatus: { total: number; segments: DashboardStatusSegment[] };
+  alerts: DashboardAlert[];
+  attendance: DashboardAttendance;
+  timeOff: DashboardTimeOffRow[];
+  departmentOverview: DashboardDepartmentRow[];
 }
 
 export const DAY_NAMES = [
