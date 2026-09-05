@@ -26,6 +26,11 @@ import SalaryStructureDetailPage from './pages/SalaryStructureDetailPage';
 import SalaryRulesPage from './pages/SalaryRulesPage';
 import SalaryRuleDetailPage from './pages/SalaryRuleDetailPage';
 import PayrollDashboardPage from './pages/PayrollDashboardPage';
+import MyProfilePage from './pages/MyProfilePage';
+import MyAttendancePage from './pages/MyAttendancePage';
+import MyTimeOffPage from './pages/MyTimeOffPage';
+import MyPayslipsPage from './pages/MyPayslipsPage';
+import MyPayslipDetailPage from './pages/MyPayslipDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -230,6 +235,49 @@ function App() {
             element={
               <ProtectedRoute roles={['admin']}>
                 <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Self-service - open to any authenticated account, no role
+              check, since every user is an employee with their own
+              attendance/time off/payslips regardless of what else they hold. */}
+          <Route
+            path="/me/profile"
+            element={
+              <ProtectedRoute>
+                <MyProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/me/attendance"
+            element={
+              <ProtectedRoute>
+                <MyAttendancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/me/time-off"
+            element={
+              <ProtectedRoute>
+                <MyTimeOffPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/me/payslips"
+            element={
+              <ProtectedRoute>
+                <MyPayslipsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/me/payslips/:id"
+            element={
+              <ProtectedRoute>
+                <MyPayslipDetailPage />
               </ProtectedRoute>
             }
           />

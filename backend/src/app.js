@@ -23,6 +23,7 @@ const { jobPositionsRouter, overviewRouter } = require('./routes/lookups.routes'
 const salaryStructuresRouter = require('./routes/salaryStructures.routes');
 const salaryRulesRouter = require('./routes/salaryRules.routes');
 const payrollDashboardRouter = require('./routes/payrollDashboard.routes');
+const meRouter = require('./routes/me.routes');
 
 const app = express();
 
@@ -53,6 +54,10 @@ app.use('/api/salary-structures', requireAuth, requireRole(...PAYROLL_STAFF), sa
 app.use('/api/salary-rules', requireAuth, requireRole(...PAYROLL_STAFF), salaryRulesRouter);
 app.use('/api/payroll/dashboard', requireAuth, requireRole(...PAYROLL_STAFF), payrollDashboardRouter);
 app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
+// No role restriction - every authenticated account (including a plain
+// employee) reaches these; ownership is enforced inside the controller by
+// scoping every query to request.user.employeeId.
+app.use('/api/me', requireAuth, meRouter);
 
 app.use(notFound);
 app.use(errorHandler);

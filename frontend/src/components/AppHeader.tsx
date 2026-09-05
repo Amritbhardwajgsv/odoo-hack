@@ -38,6 +38,19 @@ function buildNav(roles: string[]): NavEntry[] {
   return [
     { key: 'workspace', label: 'Workspace', path: '/', end: true, visible: true },
     {
+      key: 'me',
+      label: 'Me',
+      // Always visible - every account is somebody's employee record too,
+      // whatever admin/HR/payroll roles it also carries.
+      visible: true,
+      children: [
+        { path: '/me/profile', label: 'My Profile' },
+        { path: '/me/attendance', label: 'My Attendance' },
+        { path: '/me/time-off', label: 'My Time Off' },
+        { path: '/me/payslips', label: 'My Payslips' },
+      ],
+    },
+    {
       key: 'employees',
       label: 'Employees',
       visible: isHrStaff,

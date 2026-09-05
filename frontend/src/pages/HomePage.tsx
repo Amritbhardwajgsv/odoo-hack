@@ -14,18 +14,25 @@ import {
   WalletCards,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
+import AttendanceWidget from '../components/AttendanceWidget';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
-import { DEPARTMENT_LABELS, type Overview, type Role } from '../types';
+import { DEPARTMENT_LABELS, ROLES, type Overview, type Role } from '../types';
 import './home.css';
 
 const HR_STAFF: Role[] = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'];
 
 // Quick actions only point at pages that exist and the user may open.
+// Self-service ones are open to every role - everyone here is an employee
+// too, whatever else their roles add on top.
 const QUICK_ACTIONS: { label: string; hint: string; path: string; roles: Role[] }[] = [
   { label: 'People directory', hint: 'Browse and edit employee records', path: '/employees', roles: HR_STAFF },
   { label: 'Contracts', hint: 'Running contracts and history', path: '/contracts', roles: HR_STAFF },
   { label: 'User access', hint: 'Accounts, roles and status', path: '/users', roles: ['admin'] },
+  { label: 'My profile', hint: 'Your own record, read-only', path: '/me/profile', roles: ROLES },
+  { label: 'My attendance', hint: 'Check-in history and hours worked', path: '/me/attendance', roles: ROLES },
+  { label: 'My time off', hint: 'Request leave and see your balance', path: '/me/time-off', roles: ROLES },
+  { label: 'My payslips', hint: 'View and download your own payslips', path: '/me/payslips', roles: ROLES },
 ];
 
 function formatMoney(value: number) {
@@ -154,6 +161,8 @@ function Workspace() {
           </section>
 
           <aside className="ws-side">
+            <AttendanceWidget />
+
             <section className="ws-panel">
               <h2 className="ws-heading">Needs attention</h2>
               {attention.length > 0 ? (

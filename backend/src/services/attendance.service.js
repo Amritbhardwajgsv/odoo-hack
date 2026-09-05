@@ -39,7 +39,6 @@ function toTimestamp(value) {
 // Worked hours are always derived from the punches themselves rather than
 // trusted from the client, so a corrected check-in/out can't drift from the total.
 function workedHoursFrom(checkIn, checkOut) {
-  console.log("method triggered");
   if (!checkIn || !checkOut) return 0;
   const hours = (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 3_600_000;
   return hours > 0 ? Math.round(hours * 100) / 100 : 0;
@@ -127,4 +126,60 @@ async function update(id, data, correctedByUserId) {
   return rows[0] ? findById(rows[0].id) : null;
 }
 
-module.exports = { list, findById, create, update };
+// -------------------------------------------------------------- self-service
+// The quick attendance widget: every timestamp here comes from the server's
+// own clock, never from the client, so this can never be used to fabricate
+// or backdate hours the way an admin's manual correction could. That is
+// what keeps it safe to offer to everyone, HR included - the earlier rule
+// that HR cannot edit their own attendance is about the admin's manual
+// correction form (explicit, typed-in times), not a live "now" punch.
+function todayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function todayForEmployee(employeeId) {
+  const { rows } = await pool.query(
+    `${SELECT_BASE} WHERE a.employee_id = $1 AND a.attendance_date = $2`,
+    [employeeId, todayDate()]
+  );
+  return rows[0] ? mapAttendance(rows[0]) : null;
+}
+
+async function checkInSelf(employeeId) {
+  const existing = await todayForEmployee(employeeId);
+  if (existing && !existing.checkOut) return { error: 'already_checked_in', attendance: existing };
+  if (existing && existing.checkOut) return { error: 'already_completed', attendance: existing };
+
+  const { rows } = await pool.query(
+    `INSERT INTO attendance (employee_id, attendance_date, check_in, status)
+     VALUES ($1, $2, now(), 'present') RETURNING id`,
+    [employeeId, todayDate()]
+  );
+  return { attendance: await findById(rows[0].id) };
+}
+
+async function checkOutSelf(employeeId) {
+  const existing = await todayForEmployee(employeeId);
+  if (!existing || !existing.checkIn) return { error: 'not_checked_in' };
+  if (existing.checkOut) return { error: 'already_checked_out', attendance: existing };
+
+  const { rows } = await pool.query(
+    `UPDATE attendance
+        SET check_out = now(),
+            worked_hours = ROUND((EXTRACT(EPOCH FROM (now() - check_in)) / 3600.0)::numeric, 2)
+      WHERE id = $1
+      RETURNING id`,
+    [existing.id]
+  );
+  return { attendance: await findById(rows[0].id) };
+}
+
+module.exports = {
+  list,
+  findById,
+  create,
+  update,
+  todayForEmployee,
+  checkInSelf,
+  checkOutSelf,
+};
