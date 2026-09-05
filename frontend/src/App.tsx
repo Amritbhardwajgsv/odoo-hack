@@ -4,6 +4,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import UsersPage from './pages/UsersPage';
+import EmployeesPage from './pages/EmployeesPage';
+
+const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
 function App() {
   return (
@@ -12,6 +15,14 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <EmployeesPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/users"
             element={

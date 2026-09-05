@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
+import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import { ROLES, ROLE_LABELS, type Employee, type ManagedUser, type Role } from '../types';
 import './users.css';
@@ -7,7 +8,7 @@ import './users.css';
 type PanelState = { mode: 'create' } | { mode: 'edit'; user: ManagedUser } | null;
 
 export default function UsersPage() {
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [search, setSearch] = useState('');
@@ -53,21 +54,17 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="users-page">
-      <header className="users-page__header">
-        <div>
-          <h1>User Management</h1>
-          <span className="badge">Admin Only</span>
-        </div>
-        <div className="users-page__header-actions">
-          <span className="signed-in-as">{currentUser?.employeeName}</span>
-          <button className="btn btn--ghost" onClick={logout}>
-            Sign out
-          </button>
-        </div>
-      </header>
+    <div>
+      <AppHeader />
+      <div className="admin-page">
+        <header className="admin-page__header">
+          <div>
+            <h1>User Management</h1>
+            <span className="badge">Admin Only</span>
+          </div>
+        </header>
 
-      <div className="users-page__toolbar">
+        <div className="admin-page__toolbar">
         <button className="btn btn--primary" onClick={() => setPanel({ mode: 'create' })}>
           + New User
         </button>
@@ -89,7 +86,7 @@ export default function UsersPage() {
 
       {loadError && <p className="error-banner">{loadError}</p>}
 
-      <table className="users-table">
+      <table className="admin-table">
         <thead>
           <tr>
             <th>User</th>
@@ -132,6 +129,7 @@ export default function UsersPage() {
           onSaved={onSaved}
         />
       )}
+      </div>
     </div>
   );
 }

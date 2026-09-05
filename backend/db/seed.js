@@ -32,7 +32,32 @@ async function seedAdmin() {
   console.log(`Seeded admin user: ${email}`);
 }
 
+// Gives the Employee form's Job Position / Working Schedule dropdowns
+// something to show instead of being empty on a fresh database.
+async function seedLookups() {
+  const { rows: positions } = await pool.query('SELECT id FROM job_positions LIMIT 1');
+  if (positions.length === 0) {
+    await pool.query(
+      `INSERT INTO job_positions (title, department) VALUES
+         ('Software Engineer', 'engineering'),
+         ('HR Generalist', 'hr'),
+         ('Payroll Specialist', 'finance')`
+    );
+    console.log('Seeded job positions.');
+  }
+
+  const { rows: schedules } = await pool.query('SELECT id FROM working_schedules LIMIT 1');
+  if (schedules.length === 0) {
+    await pool.query(
+      `INSERT INTO working_schedules (name, type, total_weekly_hours) VALUES
+         ('Standard 9-to-5', 'fixed', 40)`
+    );
+    console.log('Seeded working schedules.');
+  }
+}
+
 seedAdmin()
+  .then(seedLookups)
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

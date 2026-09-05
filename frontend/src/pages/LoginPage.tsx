@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/users" replace />;
+  if (user) return <Navigate to="/employees" replace />;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

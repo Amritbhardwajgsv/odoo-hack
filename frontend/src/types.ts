@@ -34,10 +34,69 @@ export interface ManagedUser {
   createdAt: string;
 }
 
+export type Department =
+  | 'engineering'
+  | 'sales'
+  | 'hr'
+  | 'finance'
+  | 'marketing'
+  | 'operations'
+  | 'customer_support'
+  | 'admin';
+
+export const DEPARTMENTS: Department[] = [
+  'engineering',
+  'sales',
+  'hr',
+  'finance',
+  'marketing',
+  'operations',
+  'customer_support',
+  'admin',
+];
+
+export const DEPARTMENT_LABELS: Record<Department, string> = {
+  engineering: 'Engineering',
+  sales: 'Sales',
+  hr: 'HR',
+  finance: 'Finance',
+  marketing: 'Marketing',
+  operations: 'Operations',
+  customer_support: 'Customer Support',
+  admin: 'Admin',
+};
+
+export type EmployeeStatus = 'active' | 'terminated';
+
 export interface Employee {
   id: string;
+  employeeCode: string | null;
   fullName: string;
   email: string;
-  department: string;
+  phone: string | null;
+  department: Department;
+  jobPositionId: string | null;
+  jobPositionTitle: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  workingScheduleId: string | null;
+  workingScheduleName: string | null;
+  employeeType: string;
+  status: EmployeeStatus;
+  dateJoined: string;
   hasAccount: boolean;
+  createdAt: string;
+}
+
+export interface JobPosition {
+  id: string;
+  title: string;
+  department: Department;
+}
+
+export interface WorkingSchedule {
+  id: string;
+  name: string;
+  type: string;
+  totalWeeklyHours: number;
 }
