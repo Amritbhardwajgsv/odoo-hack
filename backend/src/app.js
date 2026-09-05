@@ -19,11 +19,9 @@ const {
   allocationsRouter: timeOffAllocationsRouter,
 } = require('./routes/timeOff.routes');
 const { payrunsRouter, payslipsRouter } = require('./routes/payruns.routes');
-const {
-  jobPositionsRouter,
-  salaryStructuresRouter,
-  overviewRouter,
-} = require('./routes/lookups.routes');
+const { jobPositionsRouter, overviewRouter } = require('./routes/lookups.routes');
+const salaryStructuresRouter = require('./routes/salaryStructures.routes');
+const salaryRulesRouter = require('./routes/salaryRules.routes');
 
 const app = express();
 
@@ -48,7 +46,10 @@ app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPosition
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
 app.use('/api/payruns', requireAuth, requireRole(...PAYROLL_STAFF), payrunsRouter);
 app.use('/api/payslips', requireAuth, requireRole(...PAYROLL_STAFF), payslipsRouter);
-app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);
+// Read is PAYROLL_STAFF-wide (a payroll user needs these to build a payrun);
+// write is narrowed further to SALARY_MANAGERS inside each router.
+app.use('/api/salary-structures', requireAuth, requireRole(...PAYROLL_STAFF), salaryStructuresRouter);
+app.use('/api/salary-rules', requireAuth, requireRole(...PAYROLL_STAFF), salaryRulesRouter);
 app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
 
 app.use(notFound);

@@ -5,14 +5,12 @@ const lookupsController = require('../controllers/lookups.controller');
 const jobPositionsRouter = Router();
 jobPositionsRouter.get('/', lookupsController.listJobPositions);
 
-const salaryStructuresRouter = Router();
-salaryStructuresRouter.get('/', lookupsController.listSalaryStructures);
-
+// Salary structures moved to routes/salaryStructures.routes.js, which
+// supports full CRUD; this module keeps only the read-only lookups.
 const overviewRouter = Router();
 overviewRouter.get('/', lookupsController.overview);
 
 module.exports = {
   jobPositionsRouter,
-  salaryStructuresRouter,
   overviewRouter,
 };

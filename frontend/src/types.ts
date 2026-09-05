@@ -186,6 +186,47 @@ export interface SalaryStructure {
   name: string;
   description: string | null;
   isActive: boolean;
+  ruleCount: number;
+  employeeCount: number;
+  createdAt?: string;
+}
+
+export type ComputationMethod =
+  | 'fixed'
+  | 'percentage_of_basic'
+  | 'percentage_of_gross'
+  | 'percentage_of_contract_wage'
+  | 'formula';
+
+export const COMPUTATION_METHODS: ComputationMethod[] = [
+  'fixed',
+  'percentage_of_basic',
+  'percentage_of_gross',
+  'percentage_of_contract_wage',
+  'formula',
+];
+
+export const COMPUTATION_METHOD_LABELS: Record<ComputationMethod, string> = {
+  fixed: 'Fixed Amount',
+  percentage_of_basic: 'Percentage of Basic',
+  percentage_of_gross: 'Percentage of Gross',
+  percentage_of_contract_wage: 'Percentage of Wage',
+  formula: 'Python Code',
+};
+
+export interface SalaryRule {
+  id: string;
+  structureId: string;
+  structureName: string;
+  name: string;
+  code: string;
+  category: SalaryCategory;
+  sequence: number;
+  computationMethod: ComputationMethod;
+  value: number | null;
+  formula: string | null;
+  quantity: number;
+  isActive: boolean;
 }
 
 export interface Overview {

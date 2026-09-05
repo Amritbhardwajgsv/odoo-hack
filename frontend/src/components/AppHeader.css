@@ -1,4 +1,5 @@
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 32px;
@@ -12,27 +13,159 @@
   font-size: 15px;
   letter-spacing: -.02em;
   text-decoration: none;
+  white-space: nowrap;
 }
 
-.app-header__nav { flex: 1; display: flex; gap: 24px; }
+.app-header__nav { flex: 1; display: flex; align-items: center; gap: 24px; }
 
-.app-header__nav a {
+.app-header__nav > a {
   padding: 6px 0;
   border-bottom: 2px solid transparent;
   color: #8c8991;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
 }
 
-.app-header__nav a.active { border-bottom-color: #a78bfa; color: #f5f3f0; }
+.app-header__nav > a.active { border-bottom-color: #a78bfa; color: #f5f3f0; }
+
+/* ------------------------------------------------------------- dropdowns */
+.nav-group { position: relative; }
+
+.nav-group__trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #8c8991;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nav-group__trigger.active { border-bottom-color: #a78bfa; color: #f5f3f0; }
+
+.nav-group__trigger svg { transition: transform .15s ease; }
+.nav-group__trigger svg.is-open { transform: rotate(180deg); }
+
+.nav-group__menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid #292929;
+  border-radius: 10px;
+  background: #111111;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+
+.nav-group__menu a {
+  padding: 9px 12px;
+  border-radius: 7px;
+  color: #ccc8d1;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-group__menu a:hover { background: #1a1a1e; color: #f5f3f0; }
+.nav-group__menu a.active { background: #1e1630; color: #a78bfa; }
 
 .app-header__actions { display: flex; align-items: center; gap: 16px; }
 .signed-in-as { color: #aaa6ae; font-size: 13px; }
 .app-header .btn--ghost { color: #f5f3f0; border-color: #454248; }
 
-@media (max-width: 650px) {
-  .app-header { gap: 14px; padding: 15px 24px; }
+.app-header__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #292929;
+  border-radius: 8px;
+  background: transparent;
+  color: #f5f3f0;
+  padding: 6px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------- mobile layout */
+/* Below this the desktop nav no longer has room for every group label, so
+   it is replaced entirely by a hamburger-triggered panel that stacks every
+   destination (grouped ones expanded, not hidden behind a second tap). */
+@media (max-width: 900px) {
+  .app-header { gap: 14px; padding: 14px 20px; flex-wrap: wrap; }
   .app-header__nav { display: none; }
   .signed-in-as { display: none; }
+  .app-header .btn--ghost { display: none; }
+  .app-header__burger { display: flex; }
+
+  .app-header__mobile {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 20px 20px;
+    border-bottom: 1px solid #292929;
+    background: #080808;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+
+  .app-header__mobile > a {
+    padding: 12px 4px;
+    border-bottom: 1px solid #1c1c1c;
+    color: #ccc8d1;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .app-header__mobile > a.active { color: #a78bfa; }
+
+  .mobile-group {
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+    border-bottom: 1px solid #1c1c1c;
+  }
+
+  .mobile-group__label {
+    padding: 2px 4px 6px;
+    color: #75717a;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .mobile-group a {
+    padding: 10px 4px 10px 14px;
+    color: #ccc8d1;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .mobile-group a.active { color: #a78bfa; }
+
+  .mobile-group .btn--ghost {
+    display: inline-flex;
+    align-self: flex-start;
+    margin: 8px 4px 12px;
+  }
 }

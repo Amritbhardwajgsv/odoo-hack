@@ -281,7 +281,9 @@ function NewPayrunModal({
 
   useEffect(() => {
     api
-      .get<SalaryStructure[]>('/api/salary-structures')
+      // Only active structures belong in a payrun; the management page
+      // handles the full list, inactive ones included.
+      .get<SalaryStructure[]>('/api/salary-structures?activeOnly=true')
       .then((rows) => {
         setStructures(rows);
         if (rows[0]) setSalaryStructureId(rows[0].id);

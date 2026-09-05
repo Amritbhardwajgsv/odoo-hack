@@ -315,7 +315,11 @@ function computeLines(rules, { wage, workedDays }) {
         amount = 0;
     }
 
-    amount = round(amount);
+    // Quantity is a plain multiplier on top of whatever the method produced
+    // (wireframe: Basic Salary, Quantity = 1). Defaulting to 1 means every
+    // rule that never sets it computes exactly as before.
+    const quantity = rule.quantity === null || rule.quantity === undefined ? 1 : Number(rule.quantity);
+    amount = round(amount * quantity);
     lines.push({
       ruleId: rule.id,
       ruleName: rule.name,
@@ -451,7 +455,7 @@ async function compute(id) {
     await client.query('BEGIN');
 
     const { rows: rules } = await client.query(
-      `SELECT id, name, code, category, sequence, computation_method, value, formula
+      `SELECT id, name, code, category, sequence, computation_method, value, formula, quantity
          FROM salary_rules
         WHERE structure_id = $1 AND is_active = true
         ORDER BY sequence, name`,

@@ -7,18 +7,6 @@ async function listJobPositions() {
   return rows.map((row) => ({ id: row.id, title: row.title, department: row.department }));
 }
 
-async function listSalaryStructures() {
-  const { rows } = await pool.query(
-    'SELECT id, name, description, is_active FROM salary_structures WHERE is_active ORDER BY name'
-  );
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    isActive: row.is_active,
-  }));
-}
-
 // Headline numbers for the workspace landing page.
 async function overview() {
   const { rows } = await pool.query(`
@@ -66,4 +54,4 @@ async function overview() {
   };
 }
 
-module.exports = { listJobPositions, listSalaryStructures, overview };
+module.exports = { listJobPositions, overview };

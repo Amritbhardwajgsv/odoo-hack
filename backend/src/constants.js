@@ -8,6 +8,11 @@ const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'
 // the people side but has no business seeing wages or payslips.
 const PAYROLL_STAFF = ['admin', 'hr_payroll_manager', 'hr_payroll_user'];
 
+// Salary structures/rules are the formulas payroll runs on. hr_payroll_user
+// can read them (needed to pick a structure when creating a payrun) but
+// only a manager or admin may change what a rule actually computes.
+const SALARY_MANAGERS = ['admin', 'hr_payroll_manager'];
+
 const DEPARTMENTS = [
   'engineering',
   'sales',
@@ -37,6 +42,7 @@ module.exports = {
   ROLES,
   HR_STAFF,
   PAYROLL_STAFF,
+  SALARY_MANAGERS,
   DEPARTMENTS,
   EMPLOYEE_STATUSES,
   CONTRACT_STATUSES,

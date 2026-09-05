@@ -45,6 +45,8 @@ const NAVIGATION = [
   { key: 'attendance', label: 'Attendance', path: '/attendance', permission: 'attendance:manage' },
   { key: 'payroll', label: 'Payroll', path: '/payruns', permission: 'payruns:write' },
   { key: 'payslips', label: 'Payslips', path: '/payslips', permission: 'payslips:write' },
+  { key: 'salary-structures', label: 'Salary Structures', path: '/salary-structures', permission: 'salary:read' },
+  { key: 'salary-rules', label: 'Salary Rules', path: '/salary-rules', permission: 'salary:read' },
   { key: 'access', label: 'Access', path: '/users', permission: 'users:manage' },
 ];
 

@@ -21,6 +21,10 @@ import PayrunsPage from './pages/PayrunsPage';
 import PayrunDetailPage from './pages/PayrunDetailPage';
 import PayslipsPage from './pages/PayslipsPage';
 import PayslipDetailPage from './pages/PayslipDetailPage';
+import SalaryStructuresPage from './pages/SalaryStructuresPage';
+import SalaryStructureDetailPage from './pages/SalaryStructureDetailPage';
+import SalaryRulesPage from './pages/SalaryRulesPage';
+import SalaryRuleDetailPage from './pages/SalaryRuleDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -168,6 +172,47 @@ function App() {
             element={
               <ProtectedRoute roles={[...PAYROLL_STAFF]}>
                 <PayslipDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/salary-structures"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <SalaryStructuresPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/salary-structures/:id"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <SalaryStructureDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/salary-rules"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <SalaryRulesPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Declared before /:id so "new" is never read as a rule id. */}
+          <Route
+            path="/salary-rules/new"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <SalaryRuleDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/salary-rules/:id"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <SalaryRuleDetailPage />
               </ProtectedRoute>
             }
           />
