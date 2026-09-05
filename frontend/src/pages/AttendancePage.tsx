@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { useAuth } from '../context/AuthContext';
@@ -10,20 +10,10 @@ import {
   type AttendanceStatus,
   type Employee,
 } from '../types';
+import { todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './attendance.css';
-
-// The browser's own local calendar date, not UTC's - toISOString() converts
-// to UTC first, which silently shows yesterday's or tomorrow's date instead
-// of today's for timezones ahead or behind UTC during part of the day.
-function todayIso() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-GB', {
@@ -247,8 +237,16 @@ function AttendancePanel({
   const [attendanceDate, setAttendanceDate] = useState(
     record ? record.attendanceDate.slice(0, 10) : todayIso()
   );
-  const [checkIn, setCheckIn] = useState(toTimeInput(record?.checkIn ?? null));
-  const [checkOut, setCheckOut] = useState(toTimeInput(record?.checkOut ?? null));
+  // Uncontrolled on purpose: a fully React-controlled type="time" input gets
+  // its value prop re-pushed on every keystroke anywhere else in this form
+  // (Employee, Status, Notes all live in this same component, so any of
+  // their onChange calls re-renders these too). Safari's native time picker
+  // loses track of which segment is being edited when that happens mid-
+  // edit and throws "Invalid value" on an otherwise-valid time. Reading the
+  // DOM value directly at submit time sidesteps the whole re-render/re-sync
+  // cycle instead of fighting the browser's own widget for control of it.
+  const checkInRef = useRef<HTMLInputElement>(null);
+  const checkOutRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<AttendanceStatus>(record?.status ?? 'present');
   const [notes, setNotes] = useState(record?.notes ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -266,6 +264,8 @@ function AttendancePanel({
     setError(null);
     setSubmitting(true);
     try {
+      const checkIn = checkInRef.current?.value ?? '';
+      const checkOut = checkOutRef.current?.value ?? '';
       const payload = {
         employeeId,
         attendanceDate,
@@ -318,10 +318,10 @@ function AttendancePanel({
           />
 
           <label>Check In</label>
-          <input type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+          <input type="time" ref={checkInRef} defaultValue={toTimeInput(record?.checkIn ?? null)} />
 
           <label>Check Out</label>
-          <input type="time" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+          <input type="time" ref={checkOutRef} defaultValue={toTimeInput(record?.checkOut ?? null)} />
 
           <label>Status *</label>
           <select value={status} onChange={(e) => setStatus(e.target.value as AttendanceStatus)}>

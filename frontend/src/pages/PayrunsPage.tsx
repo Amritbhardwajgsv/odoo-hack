@@ -14,6 +14,7 @@ import {
   type SalaryStructure,
   type WarningCode,
 } from '../types';
+import { startOfMonthIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
@@ -272,11 +273,14 @@ function NewPayrunModal({
   onContinue: (draft: DraftPayrun) => void;
 }) {
   const [structures, setStructures] = useState<SalaryStructure[]>([]);
-  const [name, setName] = useState('');
+  // Defaults to the current month rather than blank, same as picking a
+  // start manually would fill in - the previous blank default meant nothing
+  // useful appeared until the user picked a date themselves.
+  const [name, setName] = useState(monthNameFor(startOfMonthIso()));
   const [salaryStructureId, setSalaryStructureId] = useState('');
   const [department, setDepartment] = useState('');
-  const [periodStart, setPeriodStart] = useState('');
-  const [periodEnd, setPeriodEnd] = useState('');
+  const [periodStart, setPeriodStart] = useState(startOfMonthIso());
+  const [periodEnd, setPeriodEnd] = useState(endOfMonth(startOfMonthIso()));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

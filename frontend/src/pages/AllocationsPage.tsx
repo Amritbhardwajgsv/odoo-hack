@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import type { Employee, TimeOffAllocation, TimeOffType } from '../types';
+import { endOfYearIso, startOfYearIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './timeoff.css';
@@ -165,8 +166,11 @@ function NewAllocationPanel({ onClose, onSaved }: { onClose: () => void; onSaved
   const [employeeId, setEmployeeId] = useState('');
   const [timeOffTypeId, setTimeOffTypeId] = useState('');
   const [allocated, setAllocated] = useState('');
-  const [validFrom, setValidFrom] = useState('2026-01-01');
-  const [validTo, setValidTo] = useState('2026-12-31');
+  // Annual allocations run for the current policy year by default - this
+  // used to be hardcoded to a fixed year, so it quietly went wrong every
+  // year the app kept running.
+  const [validFrom, setValidFrom] = useState(startOfYearIso());
+  const [validTo, setValidTo] = useState(endOfYearIso());
   const [description, setDescription] = useState('Annual leave balance granted at start of policy year.');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

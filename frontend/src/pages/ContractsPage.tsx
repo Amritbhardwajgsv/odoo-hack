@@ -15,6 +15,7 @@ import {
   type SalaryStructure,
   type WorkingSchedule,
 } from '../types';
+import { todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 
@@ -160,7 +161,7 @@ function NewContractPanel({ onClose, onSaved }: { onClose: () => void; onSaved: 
   const [workingScheduleId, setWorkingScheduleId] = useState('');
   const [salaryStructureId, setSalaryStructureId] = useState('');
   const [wage, setWage] = useState('');
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState(todayIso());
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<ContractStatus>('active');
   const [notes, setNotes] = useState('');

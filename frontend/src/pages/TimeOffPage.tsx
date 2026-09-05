@@ -8,6 +8,7 @@ import {
   type TimeOffRequest,
   type TimeOffType,
 } from '../types';
+import { todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './timeoff.css';
@@ -179,8 +180,10 @@ function NewRequestPanel({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const [types, setTypes] = useState<TimeOffType[]>([]);
   const [employeeId, setEmployeeId] = useState('');
   const [timeOffTypeId, setTimeOffTypeId] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Most requests start soon, so today is a sensible starting point for
+  // both ends of a single-day request; the user extends dateTo as needed.
+  const [dateFrom, setDateFrom] = useState(todayIso());
+  const [dateTo, setDateTo] = useState(todayIso());
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

@@ -7,6 +7,7 @@ import {
   type TimeOffRequest,
   type TimeOffType,
 } from '../types';
+import { todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './timeoff.css';
@@ -153,8 +154,8 @@ export default function MyTimeOffPage() {
 function NewRequestPanel({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [types, setTypes] = useState<TimeOffType[]>([]);
   const [timeOffTypeId, setTimeOffTypeId] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom, setDateFrom] = useState(todayIso());
+  const [dateTo, setDateTo] = useState(todayIso());
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

@@ -28,6 +28,10 @@ export default function WorkingScheduleDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Bumped every time a fresh set of lines is loaded (initial fetch, or
+  // after a save) so each row's key changes and React remounts the row
+  // instead of patching it - see the time inputs below for why that matters.
+  const [reloadToken, setReloadToken] = useState(0);
 
   function hydrate(data: WorkingScheduleDetail) {
     setSchedule(data);
@@ -36,6 +40,7 @@ export default function WorkingScheduleDetailPage() {
     setTimezone(data.timezone);
     setIsActive(data.isActive);
     setLines(data.lines);
+    setReloadToken((token) => token + 1);
   }
 
   useEffect(() => {
@@ -214,7 +219,7 @@ export default function WorkingScheduleDetailPage() {
                 {lines.map((line, index) => {
                   const taken = new Set(lines.filter((_, i) => i !== index).map((l) => l.dayOfWeek));
                   return (
-                    <tr key={index}>
+                    <tr key={`${index}-${reloadToken}`}>
                       <td>
                         <select
                           value={line.dayOfWeek}
@@ -228,16 +233,26 @@ export default function WorkingScheduleDetailPage() {
                         </select>
                       </td>
                       <td>
+                        {/* No `value` prop on purpose: a fully-controlled
+                            time input gets its value re-pushed into the DOM
+                            on every keystroke anywhere else in this table,
+                            which is what makes Safari's native time picker
+                            throw "Invalid value" mid-edit. onChange still
+                            drives the live hours total below; the row's key
+                            changing on reload is what keeps this in sync
+                            with the server after a save, since an
+                            uncontrolled input otherwise only reads its
+                            initial value once. */}
                         <input
                           type="time"
-                          value={line.startTime}
+                          defaultValue={line.startTime}
                           onChange={(e) => updateLine(index, { startTime: e.target.value })}
                         />
                       </td>
                       <td>
                         <input
                           type="time"
-                          value={line.endTime}
+                          defaultValue={line.endTime}
                           onChange={(e) => updateLine(index, { endTime: e.target.value })}
                         />
                       </td>

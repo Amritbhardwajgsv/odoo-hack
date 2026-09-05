@@ -11,6 +11,7 @@ import {
   type JobPosition,
   type WorkingSchedule,
 } from '../types';
+import { todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 
@@ -241,7 +242,7 @@ function CreateEmployeePanel({
   const [workingScheduleId, setWorkingScheduleId] = useState('');
   const [employeeType, setEmployeeType] = useState('full_time');
   const [status, setStatus] = useState<EmployeeStatus>('active');
-  const [dateJoined, setDateJoined] = useState('');
+  const [dateJoined, setDateJoined] = useState(todayIso());
   const [workLocation, setWorkLocation] = useState('');
   const [company, setCompany] = useState('');
   const [withLogin, setWithLogin] = useState(false);
