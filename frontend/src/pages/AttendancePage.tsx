@@ -10,7 +10,7 @@ import {
   type AttendanceStatus,
   type Employee,
 } from '../types';
-import { todayIso } from '../utils/dates';
+import { normalizeTime, todayIso } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './attendance.css';
@@ -262,10 +262,20 @@ function AttendancePanel({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const rawCheckIn = checkInRef.current?.value.trim() ?? '';
+    const rawCheckOut = checkOutRef.current?.value.trim() ?? '';
+    const checkIn = rawCheckIn ? normalizeTime(rawCheckIn) : null;
+    const checkOut = rawCheckOut ? normalizeTime(rawCheckOut) : null;
+    if (rawCheckIn && checkIn === null) {
+      return setError('Check In must be a time like 9:30 or 09:30');
+    }
+    if (rawCheckOut && checkOut === null) {
+      return setError('Check Out must be a time like 18:30');
+    }
+
     setSubmitting(true);
     try {
-      const checkIn = checkInRef.current?.value ?? '';
-      const checkOut = checkOutRef.current?.value ?? '';
       const payload = {
         employeeId,
         attendanceDate,
@@ -317,11 +327,29 @@ function AttendancePanel({
             required
           />
 
-          <label>Check In</label>
-          <input type="time" ref={checkInRef} defaultValue={toTimeInput(record?.checkIn ?? null)} />
+          {/* Plain text, not type="time" - the native time widget's own
+              per-segment validity tracking throws an un-stylable "Invalid
+              value" browser tooltip on values it considers incomplete
+              (typically the AM/PM segment), even when the value was set
+              programmatically as a complete, correct time. A text field
+              has no such internal state; the format is checked ourselves
+              on submit and shown as a normal inline error like every other
+              validation in this app. */}
+          <label>Check In (24-hour HH:MM)</label>
+          <input
+            type="text"
+            ref={checkInRef}
+            defaultValue={toTimeInput(record?.checkIn ?? null)}
+            placeholder="09:30"
+          />
 
-          <label>Check Out</label>
-          <input type="time" ref={checkOutRef} defaultValue={toTimeInput(record?.checkOut ?? null)} />
+          <label>Check Out (24-hour HH:MM)</label>
+          <input
+            type="text"
+            ref={checkOutRef}
+            defaultValue={toTimeInput(record?.checkOut ?? null)}
+            placeholder="18:30"
+          />
 
           <label>Status *</label>
           <select value={status} onChange={(e) => setStatus(e.target.value as AttendanceStatus)}>

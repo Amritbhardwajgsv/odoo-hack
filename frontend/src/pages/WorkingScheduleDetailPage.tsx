@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import { DAY_NAMES, type ScheduleLine, type WorkingScheduleDetail } from '../types';
+import { normalizeTime } from '../utils/dates';
 import './shared.css';
 import './employees.css';
 import './schedules.css';
@@ -76,6 +77,19 @@ export default function WorkingScheduleDetailPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const normalizedLines = lines.map((line) => ({
+      ...line,
+      startTime: normalizeTime(line.startTime),
+      endTime: normalizeTime(line.endTime),
+    }));
+    const badLine = normalizedLines.find((line) => line.startTime === null || line.endTime === null);
+    if (badLine) {
+      return setError(
+        `${DAY_NAMES[badLine.dayOfWeek]}'s start and end time must both be a time like 9:00 or 09:00`
+      );
+    }
+
     setSaving(true);
     try {
       const updated = await api.patch<WorkingScheduleDetail>(`/api/working-schedules/${id}`, {
@@ -83,10 +97,12 @@ export default function WorkingScheduleDetailPage() {
         company: company || null,
         timezone,
         isActive,
-        lines: lines.map((line) => ({
+        // Non-null: the badLine check above already returned early if any
+        // line failed to normalize, so every line here has a real value.
+        lines: normalizedLines.map((line) => ({
           dayOfWeek: line.dayOfWeek,
-          startTime: line.startTime,
-          endTime: line.endTime,
+          startTime: line.startTime as string,
+          endTime: line.endTime as string,
           breakMinutes: line.breakMinutes || 0,
         })),
       });
@@ -233,25 +249,29 @@ export default function WorkingScheduleDetailPage() {
                         </select>
                       </td>
                       <td>
-                        {/* No `value` prop on purpose: a fully-controlled
-                            time input gets its value re-pushed into the DOM
-                            on every keystroke anywhere else in this table,
-                            which is what makes Safari's native time picker
-                            throw "Invalid value" mid-edit. onChange still
-                            drives the live hours total below; the row's key
-                            changing on reload is what keeps this in sync
-                            with the server after a save, since an
-                            uncontrolled input otherwise only reads its
-                            initial value once. */}
+                        {/* Plain text, not type="time" - the native widget
+                            throws an un-stylable "Invalid value" browser
+                            tooltip on values it considers incomplete (most
+                            often the AM/PM segment) even when set to a
+                            complete, correct time. No `value` prop either:
+                            a controlled input gets its value re-pushed into
+                            the DOM on every keystroke anywhere else in this
+                            table. onChange still drives the live hours
+                            total below; the row's key changing on reload is
+                            what keeps this in sync with the server after a
+                            save, since an uncontrolled input otherwise only
+                            reads its initial value once. */}
                         <input
-                          type="time"
+                          type="text"
+                          placeholder="09:00"
                           defaultValue={line.startTime}
                           onChange={(e) => updateLine(index, { startTime: e.target.value })}
                         />
                       </td>
                       <td>
                         <input
-                          type="time"
+                          type="text"
+                          placeholder="18:00"
                           defaultValue={line.endTime}
                           onChange={(e) => updateLine(index, { endTime: e.target.value })}
                         />
