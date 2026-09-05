@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const pool = require('../../db/pool');
-const { primaryRole, landingPathFor } = require('../constants');
+const { primaryRole, landingPathFor, permissionsFor, navigationFor } = require('../permissions');
 
 // Accounts are created by an admin only - there is no self-registration,
 // so this just verifies credentials against existing rows.
@@ -29,6 +29,10 @@ async function authenticate(email, password) {
     roles: user.roles,
     primaryRole: primaryRole(user.roles),
     landingPath: landingPathFor(user.roles),
+    // Union across every role held, so a multi-role user is never limited
+    // to just their highest-ranked one.
+    permissions: permissionsFor(user.roles),
+    navigation: navigationFor(user.roles),
     employeeId: user.employee_id,
     employeeName: user.employee_name,
   };

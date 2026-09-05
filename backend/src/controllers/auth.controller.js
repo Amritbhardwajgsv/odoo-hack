@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const authService = require('../services/auth.service');
-const { primaryRole, landingPathFor } = require('../constants');
+const { primaryRole, landingPathFor, permissionsFor, navigationFor } = require('../permissions');
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -32,6 +32,8 @@ function me(request, response) {
     roles,
     primaryRole: primaryRole(roles),
     landingPath: landingPathFor(roles),
+    permissions: permissionsFor(roles),
+    navigation: navigationFor(roles),
     employeeId,
     employeeName,
   });
