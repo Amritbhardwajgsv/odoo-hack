@@ -404,6 +404,115 @@
   color: var(--color-danger);
 }
 
+/* --------------------------------------------------------- payroll dashboard */
+.dash-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.dash-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.dash-window {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.dash-status-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dash-status-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dash-status-list li:last-child { border-bottom: none; }
+
+.dash-mini-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 14px;
+}
+
+.dash-mini-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-mini-stats b { font-size: 20px; font-weight: 700; }
+.dash-mini-stats span { color: var(--color-text-muted); font-size: 12px; }
+
+.dash-mini-stats--warn b { font-size: 22px; }
+
+/* Simple CSS-bar trend, matching the app's no-chart-library style. */
+.dash-trend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-trend li {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-trend__label {
+  color: var(--color-text);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-trend__label em {
+  color: var(--color-text-muted);
+  font-style: normal;
+}
+
+.dash-trend__bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  overflow: hidden;
+}
+
+.dash-trend__bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.dash-trend__bar--alt { background: var(--color-primary-dark); }
+
+.dash-trend__value {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .payrun-card {
     grid-template-columns: 1fr auto;
@@ -415,5 +524,12 @@
   .payrun-form {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+  .dash-columns {
+    grid-template-columns: 1fr;
+  }
+  .dash-trend li {
+    grid-template-columns: 90px 1fr auto;
+    gap: 8px;
   }
 }

@@ -22,6 +22,7 @@ const { payrunsRouter, payslipsRouter } = require('./routes/payruns.routes');
 const { jobPositionsRouter, overviewRouter } = require('./routes/lookups.routes');
 const salaryStructuresRouter = require('./routes/salaryStructures.routes');
 const salaryRulesRouter = require('./routes/salaryRules.routes');
+const payrollDashboardRouter = require('./routes/payrollDashboard.routes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/payslips', requireAuth, requireRole(...PAYROLL_STAFF), payslipsRou
 // write is narrowed further to SALARY_MANAGERS inside each router.
 app.use('/api/salary-structures', requireAuth, requireRole(...PAYROLL_STAFF), salaryStructuresRouter);
 app.use('/api/salary-rules', requireAuth, requireRole(...PAYROLL_STAFF), salaryRulesRouter);
+app.use('/api/payroll/dashboard', requireAuth, requireRole(...PAYROLL_STAFF), payrollDashboardRouter);
 app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
 
 app.use(notFound);

@@ -63,6 +63,7 @@ function buildNav(roles: string[]): NavEntry[] {
       label: 'Payroll',
       visible: isPayrollStaff,
       children: [
+        { path: '/payroll/dashboard', label: 'Dashboard' },
         { path: '/payruns', label: 'Payruns' },
         { path: '/payslips', label: 'Payslips' },
         { path: '/salary-structures', label: 'Salary Structures' },

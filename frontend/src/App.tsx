@@ -25,6 +25,7 @@ import SalaryStructuresPage from './pages/SalaryStructuresPage';
 import SalaryStructureDetailPage from './pages/SalaryStructureDetailPage';
 import SalaryRulesPage from './pages/SalaryRulesPage';
 import SalaryRuleDetailPage from './pages/SalaryRuleDetailPage';
+import PayrollDashboardPage from './pages/PayrollDashboardPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -172,6 +173,14 @@ function App() {
             element={
               <ProtectedRoute roles={[...PAYROLL_STAFF]}>
                 <PayslipDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payroll/dashboard"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <PayrollDashboardPage />
               </ProtectedRoute>
             }
           />

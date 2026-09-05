@@ -456,6 +456,50 @@ export interface PayrunPayslips {
   uncomputed: { id: string; fullName: string; department: Department }[];
 }
 
+export interface DashboardPayrunOption {
+  id: string;
+  name: string;
+  periodStart: string;
+  periodEnd: string;
+  status: PayrunStatus;
+}
+
+export interface PayrollDashboard {
+  filters: { department: Department | null; employeeType: string | null; payrunId: string | null };
+  options: { payruns: DashboardPayrunOption[]; employeeTypes: string[] };
+  salaryTotals: { gross: number; net: number; payslipCount: number; employeeCount: number };
+  payslipStatus: { status: PayslipStatus; count: number }[];
+  salaryByDepartment: { department: Department; gross: number; net: number; headcount: number }[];
+  salaryTrend: {
+    payrunId: string;
+    payrunName: string;
+    periodStart: string;
+    status: PayrunStatus;
+    gross: number;
+    net: number;
+  }[];
+  attendance: {
+    present: number;
+    late: number;
+    absent: number;
+    onLeave: number;
+    exception: number;
+    total: number;
+  };
+  timeOff: { pending: number; approved: number; refused: number; allocatedRemaining: number };
+  warnings: {
+    blocking: number;
+    advisory: number;
+    items: {
+      severity: 'blocking' | 'advisory';
+      message: string;
+      employeeName: string;
+      payrunName: string;
+      payslipId: string;
+    }[];
+  };
+}
+
 export const DAY_NAMES = [
   'Monday',
   'Tuesday',
