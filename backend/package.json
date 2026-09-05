@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "migrate": "node db/migrate.js up",
+    "migrate:down": "node db/migrate.js down",
     "test": "node --test"
   },
   "keywords": [],
@@ -13,6 +15,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1"
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "pg": "^8.13.1"
   }
 }

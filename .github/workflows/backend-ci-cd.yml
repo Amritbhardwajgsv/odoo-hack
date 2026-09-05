@@ -1,0 +1,70 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Connects to the RDS instance below via secrets - requires RDS to be reachable
+    # from GitHub-hosted runners (publicly accessible, with a security group rule
+    # allowing inbound Postgres traffic), otherwise use a self-hosted runner in the VPC.
+    env:
+      PGHOST: ${{ secrets.PGHOST }}
+      PGPORT: ${{ secrets.PGPORT }}
+      PGUSER: ${{ secrets.PGUSER }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      PGDATABASE: ${{ secrets.PGDATABASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+      - run: npm run migrate
+      - run: npm test
+
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      # Requires these repo secrets to be set (Settings -> Secrets and variables -> Actions):
+      #   SSH_HOST          - VPS address
+      #   SSH_USERNAME       - SSH user
+      #   SSH_PRIVATE_KEY    - private key for that user
+      #   SSH_PORT           - optional, defaults to 22
+      #   DEPLOY_PATH        - absolute path to the repo checkout on the VPS
+      # This job will fail until those secrets are added - that's expected for now.
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            cd backend
+            npm ci --omit=dev
+            npm run migrate
+            pm2 restart backend || pm2 start src/server.js --name backend
