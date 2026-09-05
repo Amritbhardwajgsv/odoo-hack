@@ -4,6 +4,7 @@ const controller = require('../controllers/me.controller');
 
 const router = Router();
 router.get('/profile', controller.profile);
+router.patch('/profile', controller.updateProfile);
 router.get('/attendance', controller.attendance);
 router.get('/attendance/today', controller.attendanceToday);
 router.post('/attendance/check-in', controller.checkIn);

@@ -18,6 +18,33 @@ async function profile(request, response) {
   response.json(employee);
 }
 
+// Only the "Private Information" fields from the admin employee form -
+// personal contact details an employee owns and can reasonably correct
+// themselves. Work-side fields (department, manager, job position,
+// schedule, status, employee type, company, work email) are deliberately
+// excluded here; those stay HR/Admin-only via /api/employees.
+const privateInfoSchema = z.object({
+  personalEmail: z.string().email().nullable().optional().or(z.literal('')),
+  personalPhone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional().or(z.literal('')),
+  emergencyContactName: z.string().nullable().optional(),
+  emergencyContactPhone: z.string().nullable().optional(),
+  bankAccount: z.string().nullable().optional(),
+});
+
+async function updateProfile(request, response) {
+  const parsed = privateInfoSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+  // No accountData argument - self-service can never touch roles, password,
+  // or active status, no matter what the request body contains.
+  const updated = await employeesService.update(request.user.employeeId, parsed.data);
+  if (!updated) return response.status(404).json({ message: 'Employee record not found' });
+  response.json(updated);
+}
+
 async function attendance(request, response) {
   const rows = await attendanceService.list({ employeeId: request.user.employeeId });
   response.json(rows);
@@ -129,6 +156,7 @@ async function payslipPdf(request, response) {
 
 module.exports = {
   profile,
+  updateProfile,
   attendance,
   attendanceToday,
   checkIn,
