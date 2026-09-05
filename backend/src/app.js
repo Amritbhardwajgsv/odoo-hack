@@ -48,9 +48,16 @@ app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPosition
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
 app.use('/api/payruns', requireAuth, requireRole(...PAYROLL_STAFF), payrunsRouter);
 app.use('/api/payslips', requireAuth, requireRole(...PAYROLL_STAFF), payslipsRouter);
-// Read is PAYROLL_STAFF-wide (a payroll user needs these to build a payrun);
-// write is narrowed further to SALARY_MANAGERS inside each router.
-app.use('/api/salary-structures', requireAuth, requireRole(...PAYROLL_STAFF), salaryStructuresRouter);
+// Structure *names* are needed well beyond payroll - Contracts (HR_STAFF,
+// which includes a plain hr_manager) has always populated its Salary
+// Structure dropdown from this endpoint, predating the payroll module
+// itself. Narrowing this to PAYROLL_STAFF-only broke that: an hr_manager's
+// Contract form still rendered the field but the fetch behind it 403'd and
+// left the dropdown silently empty. Rule *amounts* are a different
+// sensitivity level - Contracts never reads them, so /api/salary-rules
+// stays PAYROLL_STAFF-only. Write on both is narrowed further to
+// SALARY_MANAGERS inside each router either way.
+app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);
 app.use('/api/salary-rules', requireAuth, requireRole(...PAYROLL_STAFF), salaryRulesRouter);
 app.use('/api/payroll/dashboard', requireAuth, requireRole(...PAYROLL_STAFF), payrollDashboardRouter);
 app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
