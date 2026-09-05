@@ -86,9 +86,28 @@ async function seedPayroll() {
   }
 }
 
+// One quick-login account per role (plus one holding two roles at once),
+// all sharing the same short password so a tester never has to remember
+// which login goes with which role.
+async function seedTestAccounts() {
+  const sql = fs.readFileSync(path.join(__dirname, 'seeds', 'test_accounts.sql'), 'utf8');
+  await pool.query(sql);
+
+  const { rows } = await pool.query(
+    `SELECT u.email, u.roles::text[] AS roles
+       FROM users u WHERE u.email LIKE 'test.%@peoplepay360.com'
+      ORDER BY u.email`
+  );
+  console.log('Seeded test accounts (password: qwe123):');
+  for (const row of rows) {
+    console.log(`  ${row.email.padEnd(38)} ${row.roles.join(', ')}`);
+  }
+}
+
 seedAdmin()
   .then(seedDemoData)
   .then(seedPayroll)
+  .then(seedTestAccounts)
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;
