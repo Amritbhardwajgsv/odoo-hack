@@ -7,10 +7,12 @@ import {
   DEPARTMENTS,
   DEPARTMENT_LABELS,
   PAYRUN_STATUS_LABELS,
+  WARNING_LABELS,
   type Department,
   type EligibleEmployee,
   type Payrun,
   type SalaryStructure,
+  type WarningCode,
 } from '../types';
 import './shared.css';
 import './employees.css';
@@ -39,6 +41,36 @@ export function formatPeriodDate(value: string) {
 
 export function formatMoney(value: number) {
   return `₹${value.toLocaleString('en-IN')}`;
+}
+
+// "01-Feb — 28-Feb", the compact period the payslip list uses.
+export function formatShortPeriod(from: string, to: string) {
+  const a = calendarParts(from);
+  const b = calendarParts(to);
+  if (!a.month || !b.month) return '—';
+  return `${String(a.day).padStart(2, '0')}-${MONTHS[a.month - 1]} — ${String(b.day).padStart(
+    2,
+    '0'
+  )}-${MONTHS[b.month - 1]}`;
+}
+
+// One short label per row; the payslip itself lists every warning in full.
+export function warningCell(payslip: {
+  warningCount: number;
+  blockingCount: number;
+  topWarningCode: WarningCode | null;
+}) {
+  if (payslip.warningCount === 0) {
+    return <span className="warn-cell warn-cell--none">&mdash;</span>;
+  }
+  const label = payslip.topWarningCode ? WARNING_LABELS[payslip.topWarningCode] : 'Warning';
+  const extra = payslip.warningCount > 1 ? ` +${payslip.warningCount - 1}` : '';
+  return (
+    <span className={payslip.blockingCount > 0 ? 'warn-cell warn-cell--blocking' : 'warn-cell'}>
+      {label}
+      {extra}
+    </span>
+  );
 }
 
 function warningLabel(payrun: Payrun) {

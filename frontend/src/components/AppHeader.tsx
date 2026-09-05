@@ -27,6 +27,7 @@ export default function AppHeader() {
         {isHrStaff && <NavLink to="/allocations" className={({ isActive }) => (isActive ? 'active' : '')}>Allocations</NavLink>}
         {isHrStaff && <NavLink to="/time-off-types" className={({ isActive }) => (isActive ? 'active' : '')}>Leave Types</NavLink>}
         {isPayrollStaff && <NavLink to="/payruns" className={({ isActive }) => (isActive ? 'active' : '')}>Payroll</NavLink>}
+        {isPayrollStaff && <NavLink to="/payslips" end className={({ isActive }) => (isActive ? 'active' : '')}>Payslips</NavLink>}
         {isAdmin && <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>Access</NavLink>}
       </nav>
       <div className="app-header__actions">

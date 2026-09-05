@@ -44,6 +44,7 @@ const NAVIGATION = [
   { key: 'timeoff', label: 'Time Off', path: '/time-off', permission: 'timeoff:manage' },
   { key: 'attendance', label: 'Attendance', path: '/attendance', permission: 'attendance:manage' },
   { key: 'payroll', label: 'Payroll', path: '/payruns', permission: 'payruns:write' },
+  { key: 'payslips', label: 'Payslips', path: '/payslips', permission: 'payslips:write' },
   { key: 'access', label: 'Access', path: '/users', permission: 'users:manage' },
 ];
 

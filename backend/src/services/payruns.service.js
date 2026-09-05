@@ -605,6 +605,7 @@ function mapPayslip(row) {
     id: row.id,
     payrunId: row.payrun_id,
     payrunName: row.payrun_name,
+    structureName: row.structure_name,
     employeeId: row.employee_id,
     employeeName: row.employee_name,
     employeeEmail: row.employee_email,
@@ -639,6 +640,7 @@ const PAYSLIP_SELECT = `
          c.contract_number,
          c.wage,
          p.name       AS payrun_name,
+         ss.name      AS structure_name,
          -- The payslip table shows Basic as its own column; it is the sum of
          -- whatever the structure classified as basic, not a fixed rule.
          (SELECT COALESCE(SUM(l.amount), 0) FROM payslip_lines l
@@ -657,6 +659,7 @@ const PAYSLIP_SELECT = `
     JOIN employees e   ON e.id = ps.employee_id
     JOIN contracts c   ON c.id = ps.contract_id
     JOIN payruns p     ON p.id = ps.payrun_id
+    LEFT JOIN salary_structures ss ON ss.id = p.salary_structure_id
     LEFT JOIN job_positions jp ON jp.id = e.job_position_id
 `;
 
@@ -682,8 +685,10 @@ async function listPayslips({ payrunId, employeeId, status, search } = {}) {
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  // Newest period first for the global list; within one payrun every row
+  // shares a period, so this still reads as a plain alphabetical list.
   const { rows } = await pool.query(
-    `${PAYSLIP_SELECT} ${where} ORDER BY e.full_name`,
+    `${PAYSLIP_SELECT} ${where} ORDER BY ps.period_start DESC, e.full_name`,
     params
   );
   return rows.map(mapPayslip);

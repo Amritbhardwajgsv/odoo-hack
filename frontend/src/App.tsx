@@ -19,6 +19,7 @@ import TimeOffTypesPage from './pages/TimeOffTypesPage';
 import TimeOffTypeDetailPage from './pages/TimeOffTypeDetailPage';
 import PayrunsPage from './pages/PayrunsPage';
 import PayrunDetailPage from './pages/PayrunDetailPage';
+import PayslipsPage from './pages/PayslipsPage';
 import PayslipDetailPage from './pages/PayslipDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
@@ -151,6 +152,14 @@ function App() {
             element={
               <ProtectedRoute roles={[...PAYROLL_STAFF]}>
                 <PayrunDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payslips"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <PayslipsPage />
               </ProtectedRoute>
             }
           />

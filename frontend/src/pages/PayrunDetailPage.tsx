@@ -4,31 +4,14 @@ import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import {
   PAYRUN_STATUS_LABELS,
-  WARNING_LABELS,
   type Payrun,
   type PayrunPayslips,
-  type Payslip,
   type SendPayslipsResult,
 } from '../types';
-import { formatMoney, formatPeriodDate } from './PayrunsPage';
+import { formatMoney, formatPeriodDate, warningCell } from './PayrunsPage';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
-
-// A row shows one short label; the payslip itself lists every warning.
-function warningCell(payslip: Payslip) {
-  if (payslip.warningCount === 0) {
-    return <span className="warn-cell warn-cell--none">&mdash;</span>;
-  }
-  const label = payslip.topWarningCode ? WARNING_LABELS[payslip.topWarningCode] : 'Warning';
-  const extra = payslip.warningCount > 1 ? ` +${payslip.warningCount - 1}` : '';
-  return (
-    <span className={payslip.blockingCount > 0 ? 'warn-cell warn-cell--blocking' : 'warn-cell'}>
-      {label}
-      {extra}
-    </span>
-  );
-}
 
 export default function PayrunDetailPage() {
   const { id } = useParams<{ id: string }>();

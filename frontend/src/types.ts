@@ -310,6 +310,7 @@ export interface Payslip {
   id: string;
   payrunId: string;
   payrunName: string;
+  structureName: string | null;
   employeeId: string;
   employeeName: string;
   employeeEmail: string | null;
