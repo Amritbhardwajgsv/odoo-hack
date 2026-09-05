@@ -1,6 +1,7 @@
 const { z } = require('zod');
 
 const authService = require('../services/auth.service');
+const { primaryRole, landingPathFor } = require('../constants');
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -21,4 +22,19 @@ async function login(request, response) {
   response.json({ token: authService.issueToken(user), user });
 }
 
-module.exports = { login };
+// requireAuth has already refreshed roles from the database, so this reflects
+// the user's current access even if their token was signed with older roles.
+function me(request, response) {
+  const { sub, email, roles, employeeId, employeeName } = request.user;
+  response.json({
+    id: sub,
+    email,
+    roles,
+    primaryRole: primaryRole(roles),
+    landingPath: landingPathFor(roles),
+    employeeId,
+    employeeName,
+  });
+}
+
+module.exports = { login, me };

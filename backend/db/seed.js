@@ -1,4 +1,7 @@
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
+
 const pool = require('./pool');
 
 // Only admins can create user accounts, so there is no signup route -
@@ -20,44 +23,29 @@ async function seedAdmin() {
      RETURNING id`,
     ['System Administrator', email]
   );
-  const employeeId = employeeRows[0].id;
 
   const passwordHash = await bcrypt.hash(password, 10);
   await pool.query(
     `INSERT INTO users (employee_id, email, password_hash, roles, is_active)
      VALUES ($1, $2, $3, ARRAY['admin']::user_role[], true)`,
-    [employeeId, email, passwordHash]
+    [employeeRows[0].id, email, passwordHash]
   );
 
   console.log(`Seeded admin user: ${email}`);
 }
 
-// Gives the Employee form's Job Position / Working Schedule dropdowns
-// something to show instead of being empty on a fresh database.
-async function seedLookups() {
-  const { rows: positions } = await pool.query('SELECT id FROM job_positions LIMIT 1');
-  if (positions.length === 0) {
-    await pool.query(
-      `INSERT INTO job_positions (title, department) VALUES
-         ('Software Engineer', 'engineering'),
-         ('HR Generalist', 'hr'),
-         ('Payroll Specialist', 'finance')`
-    );
-    console.log('Seeded job positions.');
-  }
+// Demo employees + accounts covering every role. The SQL is kept as a file
+// so it can also be run directly against the database without Node.
+async function seedDemoData() {
+  const sql = fs.readFileSync(path.join(__dirname, 'seeds', 'demo_data.sql'), 'utf8');
+  await pool.query(sql);
 
-  const { rows: schedules } = await pool.query('SELECT id FROM working_schedules LIMIT 1');
-  if (schedules.length === 0) {
-    await pool.query(
-      `INSERT INTO working_schedules (name, type, total_weekly_hours) VALUES
-         ('Standard 9-to-5', 'fixed', 40)`
-    );
-    console.log('Seeded working schedules.');
-  }
+  const { rows } = await pool.query('SELECT count(*)::int AS count FROM employees');
+  console.log(`Seeded demo data. Employees in database: ${rows[0].count}`);
 }
 
 seedAdmin()
-  .then(seedLookups)
+  .then(seedDemoData)
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

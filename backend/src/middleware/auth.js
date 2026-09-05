@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-function requireAuth(request, response, next) {
+const usersService = require('../services/users.service');
+
+async function requireAuth(request, response, next) {
   const header = request.headers.authorization || '';
   const [scheme, token] = header.split(' ');
 
@@ -8,12 +10,30 @@ function requireAuth(request, response, next) {
     return response.status(401).json({ message: 'Missing or invalid Authorization header' });
   }
 
+  let payload;
   try {
-    request.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch (error) {
-    response.status(401).json({ message: 'Invalid or expired token' });
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return response.status(401).json({ message: 'Invalid or expired token' });
   }
+
+  // The token carries the roles it was signed with, but those go stale the
+  // moment an admin edits them. Authorization therefore uses the roles as
+  // they are in the database right now, so a demotion or deactivation takes
+  // effect immediately instead of lingering until the token expires.
+  const user = await usersService.findById(payload.sub);
+  if (!user || !user.isActive) {
+    return response.status(401).json({ message: 'Account is inactive or no longer exists' });
+  }
+
+  request.user = {
+    sub: user.id,
+    email: user.email,
+    roles: user.roles,
+    employeeId: user.employeeId,
+    employeeName: user.employeeName,
+  };
+  next();
 }
 
 function requireRole(...allowedRoles) {
