@@ -80,6 +80,39 @@ UPDATE employees SET manager_id = (SELECT id FROM employees WHERE email = 'neha@
  WHERE email = 'karan@peoplepay360.com'
    AND manager_id IS NULL;
 
+-- ------------------------------------------------- working schedule pattern
+-- Mon-Fri 09:00-18:00 with a 60 minute break = 8h a day, 40h a week.
+-- day_of_week: 0 = Monday ... 6 = Sunday.
+INSERT INTO working_schedule_lines (schedule_id, day_of_week, start_time, end_time, break_minutes)
+SELECT ws.id, d.day, TIME '09:00', TIME '18:00', 60
+  FROM working_schedules ws
+  CROSS JOIN (VALUES (0), (1), (2), (3), (4)) AS d(day)
+ WHERE ws.name = 'Standard 9-to-5'
+   AND NOT EXISTS (
+     SELECT 1 FROM working_schedule_lines l
+      WHERE l.schedule_id = ws.id AND l.day_of_week = d.day
+   );
+
+-- Four-day week: Mon-Thu 09:00-18:00, same break = 32h.
+INSERT INTO working_schedule_lines (schedule_id, day_of_week, start_time, end_time, break_minutes)
+SELECT ws.id, d.day, TIME '09:00', TIME '18:00', 60
+  FROM working_schedules ws
+  CROSS JOIN (VALUES (0), (1), (2), (3)) AS d(day)
+ WHERE ws.name = 'Four-day week'
+   AND NOT EXISTS (
+     SELECT 1 FROM working_schedule_lines l
+      WHERE l.schedule_id = ws.id AND l.day_of_week = d.day
+   );
+
+UPDATE working_schedules ws
+   SET company = COALESCE(ws.company, 'PeoplePay360 Pvt Ltd'),
+       total_weekly_hours = COALESCE((
+         SELECT SUM((EXTRACT(EPOCH FROM (l.end_time - l.start_time)) / 3600.0)
+                    - (l.break_minutes / 60.0))
+           FROM working_schedule_lines l
+          WHERE l.schedule_id = ws.id
+       ), 0);
+
 -- ------------------------------------------------------- salary structures
 -- contracts.salary_structure_id is NOT NULL, so at least one structure has
 -- to exist before any contract can be created.

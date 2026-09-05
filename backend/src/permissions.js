@@ -40,6 +40,7 @@ const NAVIGATION = [
   { key: 'workspace', label: 'Workspace', path: '/', permission: null },
   { key: 'people', label: 'People', path: '/employees', permission: 'employees:manage' },
   { key: 'contracts', label: 'Contracts', path: '/contracts', permission: 'contracts:manage' },
+  { key: 'schedules', label: 'Schedules', path: '/working-schedules', permission: 'schedules:manage' },
   { key: 'attendance', label: 'Attendance', path: '/attendance', permission: 'attendance:manage' },
   { key: 'access', label: 'Access', path: '/users', permission: 'users:manage' },
 ];

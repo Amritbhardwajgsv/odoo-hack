@@ -7,18 +7,6 @@ async function listJobPositions() {
   return rows.map((row) => ({ id: row.id, title: row.title, department: row.department }));
 }
 
-async function listWorkingSchedules() {
-  const { rows } = await pool.query(
-    'SELECT id, name, type, total_weekly_hours FROM working_schedules ORDER BY name'
-  );
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    totalWeeklyHours: Number(row.total_weekly_hours),
-  }));
-}
-
 async function listSalaryStructures() {
   const { rows } = await pool.query(
     'SELECT id, name, description, is_active FROM salary_structures WHERE is_active ORDER BY name'
@@ -78,4 +66,4 @@ async function overview() {
   };
 }
 
-module.exports = { listJobPositions, listWorkingSchedules, listSalaryStructures, overview };
+module.exports = { listJobPositions, listSalaryStructures, overview };

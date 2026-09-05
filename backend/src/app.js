@@ -12,9 +12,9 @@ const usersRouter = require('./routes/users.routes');
 const employeesRouter = require('./routes/employees.routes');
 const contractsRouter = require('./routes/contracts.routes');
 const attendanceRouter = require('./routes/attendance.routes');
+const workingSchedulesRouter = require('./routes/workingSchedules.routes');
 const {
   jobPositionsRouter,
-  workingSchedulesRouter,
   salaryStructuresRouter,
   overviewRouter,
 } = require('./routes/lookups.routes');

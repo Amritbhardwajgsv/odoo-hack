@@ -9,6 +9,8 @@ import EmployeeDetailPage from './pages/EmployeeDetailPage';
 import ContractsPage from './pages/ContractsPage';
 import ContractDetailPage from './pages/ContractDetailPage';
 import AttendancePage from './pages/AttendancePage';
+import WorkingSchedulesPage from './pages/WorkingSchedulesPage';
+import WorkingScheduleDetailPage from './pages/WorkingScheduleDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -56,6 +58,22 @@ function App() {
             element={
               <ProtectedRoute roles={[...HR_STAFF]}>
                 <AttendancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/working-schedules"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <WorkingSchedulesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/working-schedules/:id"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <WorkingScheduleDetailPage />
               </ProtectedRoute>
             }
           />

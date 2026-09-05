@@ -1,0 +1,130 @@
+.week {
+  margin-top: 30px;
+  padding-top: 26px;
+  border-top: 1px solid var(--color-border);
+}
+
+.week__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.week__head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.week__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.week__table th {
+  padding: 0 12px 10px 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.week__table td {
+  padding: 6px 12px 6px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.week__table select,
+.week__table input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.week__table input[type='number'] {
+  max-width: 110px;
+}
+
+.week__hours {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.week__remove {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.week__remove:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.week__total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.week__total span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.week__total strong {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.save-note {
+  align-self: center;
+  margin-right: auto;
+  color: var(--color-success);
+  font-size: 13px;
+}
+
+.field input[readonly] {
+  border-color: transparent;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 760px) {
+  .week__table,
+  .week__table tbody,
+  .week__table tr,
+  .week__table td {
+    display: block;
+    width: 100%;
+  }
+  .week__table thead {
+    display: none;
+  }
+  .week__table tr {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .week__table input[type='number'] {
+    max-width: none;
+  }
+}

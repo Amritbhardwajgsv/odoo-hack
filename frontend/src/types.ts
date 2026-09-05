@@ -206,9 +206,38 @@ export interface JobPosition {
   department: Department;
 }
 
+export const DAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
+export interface ScheduleLine {
+  id?: string;
+  dayOfWeek: number;
+  dayName?: string;
+  startTime: string;
+  endTime: string;
+  breakMinutes: number;
+  hours?: number;
+}
+
 export interface WorkingSchedule {
   id: string;
   name: string;
   type: string;
+  company: string | null;
+  timezone: string;
+  isActive: boolean;
+  daysPerWeek: number;
   totalWeeklyHours: number;
+  createdAt?: string;
+}
+
+export interface WorkingScheduleDetail extends WorkingSchedule {
+  lines: ScheduleLine[];
 }
