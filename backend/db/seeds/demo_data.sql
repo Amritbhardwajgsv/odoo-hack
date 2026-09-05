@@ -80,6 +80,51 @@ UPDATE employees SET manager_id = (SELECT id FROM employees WHERE email = 'neha@
  WHERE email = 'karan@peoplepay360.com'
    AND manager_id IS NULL;
 
+-- ------------------------------------------------------- salary structures
+-- contracts.salary_structure_id is NOT NULL, so at least one structure has
+-- to exist before any contract can be created.
+INSERT INTO salary_structures (name, description, is_active)
+SELECT v.name, v.description, true
+  FROM (VALUES
+    ('Employee Salary', 'Standard monthly salary structure used for payroll runs.'),
+    ('Contractor Payout', 'Flat payout structure for contract staff.')
+  ) AS v(name, description)
+ WHERE NOT EXISTS (SELECT 1 FROM salary_structures s WHERE s.name = v.name);
+
+-- --------------------------------------------------------------- contracts
+-- Each employee gets one running contract; Karan also keeps an expired one so
+-- the list shows real contract history alongside the active row.
+INSERT INTO contracts
+  (employee_id, department, job_position_id, working_schedule_id,
+   salary_structure_id, wage, start_date, end_date, status, notes, contract_number)
+SELECT e.id, e.department, e.job_position_id, e.working_schedule_id,
+       (SELECT id FROM salary_structures WHERE name = 'Employee Salary' LIMIT 1),
+       v.wage, v.start_date, v.end_date, v.status::contract_status,
+       'This running contract is the source for payroll calculation in the active period.',
+       -- numbered by the contract's own year, not the year it was inserted
+       'CON/' || to_char(v.start_date, 'YYYY') || '/' ||
+         lpad(nextval('contract_number_seq')::text, 4, '0')
+  FROM (VALUES
+    ('rhea@peoplepay360.com',   85000.00, DATE '2026-01-01', NULL::date,             'active'),
+    ('neha@peoplepay360.com',   95000.00, DATE '2026-01-01', NULL::date,             'active'),
+    ('karan@peoplepay360.com',  78000.00, DATE '2025-07-01', DATE '2025-12-31',      'expired'),
+    ('karan@peoplepay360.com',  85000.00, DATE '2026-01-01', NULL::date,             'active'),
+    ('arjun@peoplepay360.com',  65000.00, DATE '2026-01-01', NULL::date,             'active'),
+    ('vikram@peoplepay360.com', 55000.00, DATE '2026-01-01', DATE '2026-12-31',      'active')
+  ) AS v(email, wage, start_date, end_date, status)
+  JOIN employees e ON e.email = v.email
+ WHERE NOT EXISTS (
+   SELECT 1 FROM contracts c
+    WHERE c.employee_id = e.id AND c.start_date = v.start_date
+ );
+
+-- realign any contract numbered with the insert year rather than its own
+UPDATE contracts
+   SET contract_number = 'CON/' || to_char(start_date, 'YYYY') || '/' ||
+                         split_part(contract_number, '/', 3)
+ WHERE contract_number IS NOT NULL
+   AND split_part(contract_number, '/', 2) <> to_char(start_date, 'YYYY');
+
 -- --------------------------------------------------------------- accounts
 -- Ishita Rao is deliberately left without a login, to exercise the
 -- "employee exists but cannot sign in" case.

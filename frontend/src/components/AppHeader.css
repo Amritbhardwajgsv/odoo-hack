@@ -2,37 +2,37 @@
   display: flex;
   align-items: center;
   gap: 32px;
-  padding: 16px 40px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg);
+  padding: 16px 5vw;
+  border-bottom: 1px solid #292929;
+  background: #080808;
 }
 
 .app-header__brand {
-  font-size: 22px;
+  color: #f5f3f0;
+  font-size: 15px;
+  letter-spacing: -.02em;
+  text-decoration: none;
 }
 
-.app-header__nav {
-  flex: 1;
-  display: flex;
-  gap: 24px;
-}
+.app-header__nav { flex: 1; display: flex; gap: 24px; }
 
 .app-header__nav a {
-  text-decoration: none;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  font-weight: 500;
   padding: 6px 0;
   border-bottom: 2px solid transparent;
+  color: #8c8991;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
-.app-header__nav a.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-}
+.app-header__nav a.active { border-bottom-color: #a78bfa; color: #f5f3f0; }
 
-.app-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.app-header__actions { display: flex; align-items: center; gap: 16px; }
+.signed-in-as { color: #aaa6ae; font-size: 13px; }
+.app-header .btn--ghost { color: #f5f3f0; border-color: #454248; }
+
+@media (max-width: 650px) {
+  .app-header { gap: 14px; padding: 15px 24px; }
+  .app-header__nav { display: none; }
+  .signed-in-as { display: none; }
 }

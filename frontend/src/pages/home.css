@@ -1,66 +1,79 @@
-.home {
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, var(--color-surface-alt) 0%, var(--color-bg) 55%);
-  padding: 24px;
-}
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body { background: #090909; }
+.flow-page, .app-workspace { min-height: 100vh; color: #f3f1ef; background: #090909; }
+.flow-page { max-width: 1440px; margin: 0 auto; padding: 0 clamp(24px, 5vw, 76px); }
+.flow-nav { min-height: 84px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #292929; }
+.flow-brand, .flow-nav a, .flow-footer a { display: inline-flex; align-items: center; gap: 8px; color: #f3f1ef; text-decoration: none; font-size: 13px; font-weight: 700; }
+.flow-brand { font-size: 15px; }
+.flow-nav nav { display: flex; align-items: center; gap: 25px; }
+.flow-nav nav > a:not(.flow-nav__signin) { color: #9e9aa2; font-weight: 550; }
+.flow-nav__signin { padding: 9px 12px; border: 1px solid #49454c; border-radius: 5px; }
+.flow-hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr); align-items: center; gap: clamp(52px, 10vw, 170px); padding: clamp(86px, 11vw, 168px) 0; }
+.flow-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 20px; color: #a78bfa; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.flow-hero h1, .app-workspace h1 { max-width: 840px; margin: 0; font-size: clamp(50px, 6.4vw, 94px); font-weight: 640; line-height: .95; letter-spacing: -.074em; }
+.flow-hero__copy { max-width: 580px; margin: 31px 0; color: #a4a0a8; font-size: 17px; line-height: 1.65; }
+.flow-hero__buttons { display: flex; align-items: center; gap: 26px; }
+.flow-button, .flow-text-link { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; font-weight: 750; }
+.flow-button { padding: 14px 16px; border-radius: 5px; background: #7c3aed; }
+.flow-button:hover { background: #8b5cf6; }
+.flow-text-link { color: #c5c0c9; }
+.flow-overview { min-height: 400px; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; border: 1px solid #343037; border-radius: 10px; background: linear-gradient(145deg, #19151e, #101010 65%); }
+.flow-overview__top, .flow-stat-row { display: flex; justify-content: space-between; color: #a7a2aa; font-size: 12px; font-weight: 650; }
+.flow-live { color: #c8c3cc; } .flow-live i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 100%; background: #63d59a; }
+.flow-overview h2 { margin: 0; font-size: clamp(32px, 3vw, 46px); line-height: 1.02; letter-spacing: -.055em; }
+.flow-stat-row { padding-top: 22px; border-top: 1px solid #38333b; }
+.flow-stat-row div { display: grid; gap: 5px; } .flow-stat-row b { color: #fff; font-size: 30px; letter-spacing: -.04em; } .flow-stat-row span { text-transform: uppercase; letter-spacing: .08em; font-size: 10px; }
+.flow-workspaces { padding: 32px 0 130px; border-top: 1px solid #292929; }
+.section-heading { display: grid; grid-template-columns: .7fr 1fr; align-items: end; gap: 30px; padding: 54px 0; }
+.section-heading h2, .flow-why h2 { margin: 0; font-size: clamp(34px, 4.2vw, 60px); font-weight: 570; line-height: 1; letter-spacing: -.06em; }
+.role-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+.role-card { min-height: 350px; display: flex; flex-direction: column; padding: 23px; border: 1px solid #353139; border-radius: 9px; background: #121212; transition: transform .22s ease, border-color .22s ease, background .22s ease; }
+.role-card:hover { transform: translateY(-6px); border-color: #8060bb; background: #171419; }
+.role-card:nth-child(1), .role-card:nth-child(2), .role-card:nth-child(3) { grid-column: span 4; } .role-card:nth-child(4), .role-card:nth-child(5) { grid-column: span 6; }
+.role-card__icon { display: grid; place-items: center; width: 42px; height: 42px; margin-bottom: auto; border-radius: 7px; color: #c5adfb; background: #281c42; }
+.role-card > span { margin-top: 35px; color: #918b94; font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.role-card h3 { margin: 12px 0 9px; font-size: 28px; font-weight: 590; line-height: 1; letter-spacing: -.045em; } .role-card p { max-width: 350px; margin: 0; color: #aaa5ad; line-height: 1.55; font-size: 14px; }
+.role-card__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; } .role-card__links a { display: inline-flex; align-items: center; gap: 4px; padding: 7px 8px; border: 1px solid #413c44; border-radius: 4px; color: #d3ced6; text-decoration: none; font-size: 11px; }
+.flow-why { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 84px 0; border-top: 1px solid #292929; }
+.flow-why__points { display: grid; gap: 0; } .flow-why__points p { display: grid; grid-template-columns: 48px 1fr; gap: 15px; margin: 0; padding: 18px 0; border-bottom: 1px solid #292929; color: #c3bdc6; line-height: 1.5; } .flow-why__points b { color: #9b75e9; font-size: 12px; }
+.flow-footer { min-height: 88px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #292929; color: #9e9aa2; font-weight: 700; font-size: 13px; } .flow-footer a { color: #f3f1ef; }
+.app-workspace { padding: 100px 8vw; } .app-workspace__heading > p:last-child { max-width: 550px; margin: 27px 0 48px; color: #aaa5ad; font-size: 17px; line-height: 1.6; }
+.quick-actions { max-width: 760px; border-top: 1px solid #302d32; } .quick-actions button { width: 100%; display: grid; grid-template-columns: 45px 40px 1fr 20px; gap: 12px; align-items: center; padding: 22px 0; border: 0; border-bottom: 1px solid #302d32; background: transparent; color: #f3f1ef; font: inherit; text-align: left; cursor: pointer; } .quick-actions button:hover { color: #b99cff; } .quick-actions button span { color: #827b86; font-size: 11px; } .quick-actions button svg { color: #a78bfa; }
+@media (max-width: 800px) { .flow-hero, .flow-why, .section-heading { grid-template-columns: 1fr; gap: 34px; } .flow-hero { padding: 82px 0; } .role-card:nth-child(n) { grid-column: span 12; min-height: 285px; } .flow-nav nav > a:not(.flow-nav__signin) { display: none; } .flow-why { padding: 60px 0; } }
+@media (max-width: 500px) { .flow-page { padding: 0 20px; } .flow-nav { min-height: 70px; } .flow-hero__buttons { align-items: flex-start; flex-direction: column; } .flow-overview { min-height: 320px; } .app-workspace { padding: 70px 24px; } }
 
-.home__card {
-  width: 100%;
-  max-width: 480px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 56px 48px;
-  text-align: center;
-  box-shadow: 0 20px 60px -20px rgba(124, 58, 237, 0.25);
-}
-
-.home__eyebrow {
-  margin: 0 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.home__title {
-  margin: 0 0 12px;
-  font-size: 56px;
-  line-height: 1.1;
-}
-
-.home__tagline {
-  margin: 0 0 32px;
-  font-style: italic;
-  color: var(--color-text-muted);
-  font-size: 15px;
-}
-
-.home__cta {
-  display: inline-block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 14px;
-  background: var(--color-primary);
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 15px;
-  border-radius: 10px;
-  transition: background 0.15s ease;
-}
-
-.home__cta:hover {
-  background: var(--color-primary-dark);
-}
-
-.home__hint {
-  margin: 20px 0 0;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
+/* ------------------------------------------- signed-in workspace detail */
+.ws-heading { margin: 0 0 16px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.ws-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 46px; }
+.ws-stat { display: grid; gap: 4px; padding: 20px; border: 1px solid #302d32; border-radius: 10px; background: #121212; }
+.ws-stat svg { color: #a78bfa; margin-bottom: 6px; }
+.ws-stat b { font-size: 28px; font-weight: 620; letter-spacing: -.04em; }
+.ws-stat span { color: #d3ced6; font-size: 13px; }
+.ws-stat small { color: #827b86; font-size: 11px; }
+.ws-columns { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.quick-actions a { width: 100%; display: grid; grid-template-columns: 45px 40px 1fr 20px; gap: 12px; align-items: center; padding: 20px 0; border-bottom: 1px solid #302d32; color: #f3f1ef; text-decoration: none; }
+.quick-actions a:hover { color: #b99cff; }
+.quick-actions a span { color: #827b86; font-size: 11px; }
+.quick-actions a svg { color: #a78bfa; }
+.quick-actions strong { display: grid; gap: 3px; font-weight: 650; }
+.quick-actions strong em { color: #918b94; font-size: 12px; font-style: normal; font-weight: 400; }
+.ws-side { display: grid; gap: 18px; }
+.ws-panel { padding: 22px; border: 1px solid #302d32; border-radius: 10px; background: #121212; }
+.ws-alert { display: grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #262329; color: #f3f1ef; text-decoration: none; }
+.ws-alert:last-child { border-bottom: 0; padding-bottom: 0; }
+.ws-alert svg { margin-top: 2px; color: #fbbf24; }
+.ws-alert span { display: grid; gap: 3px; }
+.ws-alert strong { font-size: 13px; font-weight: 600; }
+.ws-alert em { color: #918b94; font-size: 12px; font-style: normal; }
+.ws-alert:hover strong { color: #b99cff; }
+.ws-empty { margin: 0; color: #827b86; font-size: 12px; line-height: 1.55; }
+.ws-dept { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ws-dept li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid #262329; }
+.ws-dept li:last-child { border-bottom: 0; padding-bottom: 0; }
+.ws-dept span { color: #d3ced6; font-size: 13px; }
+.ws-dept b { font-size: 14px; }
+.ws-dept small { min-width: 78px; color: #827b86; font-size: 11px; text-align: right; }
+.ws-roles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.ws-roles span { padding: 6px 10px; border-radius: 999px; color: #c5adfb; background: #281c42; font-size: 11px; font-weight: 600; text-transform: capitalize; }
+@media (max-width: 900px) { .ws-columns { grid-template-columns: 1fr; gap: 28px; } }

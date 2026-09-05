@@ -261,6 +261,79 @@
   background: var(--color-surface-alt);
 }
 
+/* ------------------------------------------------------------- contracts */
+/* Running has to stand out - payroll depends on which contract is active. */
+.contract-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.contract-status--active {
+  color: var(--color-success);
+}
+
+.contract-status--expired,
+.contract-status--terminated {
+  color: var(--color-danger);
+}
+
+.contract-status--draft {
+  color: var(--color-text-muted);
+}
+
+.notes-box {
+  margin-top: 28px;
+  padding: 20px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.notes-box h3 {
+  margin: 0 0 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notes-box__field {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 320px);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.notes-box__field > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.notes-box__field select,
+.notes-box__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.notes-box__field select:disabled {
+  border-color: transparent;
+  background: var(--color-surface-alt);
+  opacity: 1;
+}
+
+.notes-box__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .inline-check {
   display: flex;
   align-items: center;

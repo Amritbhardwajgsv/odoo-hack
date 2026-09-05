@@ -17,6 +17,10 @@ const DEPARTMENTS = [
 
 const EMPLOYEE_STATUSES = ['active', 'terminated'];
 
+// 'active' is shown as "Running" in the UI, which is the wording the
+// wireframes and the payroll flow use.
+const CONTRACT_STATUSES = ['draft', 'active', 'expired', 'terminated'];
+
 const PASSWORD_SALT_ROUNDS = 10;
 
 // Most-privileged first. Used to decide which single page opens after
@@ -28,6 +32,7 @@ module.exports = {
   HR_STAFF,
   DEPARTMENTS,
   EMPLOYEE_STATUSES,
+  CONTRACT_STATUSES,
   PASSWORD_SALT_ROUNDS,
   ROLE_PRIORITY,
 };

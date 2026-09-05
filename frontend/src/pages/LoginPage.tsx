@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
 import './auth.css';
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/employees" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -27,42 +27,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1 className="auth-card__title">HR Portal</h1>
-        <div className="auth-card__body">
-          <h2>Welcome back</h2>
-          <p className="auth-card__subtitle">Sign in to continue to your workspace.</p>
+    <main className="auth-page">
+      <header className="auth-nav">
+        <Link to="/">PEOPLEPAY360</Link>
+        <span>Secure workspace</span>
+      </header>
+
+      <div className="auth-layout">
+        <section className="auth-intro">
+          <p className="auth-eyebrow">Your work, in one place</p>
+          <h1>Sign in and pick up where your work left off.</h1>
+          <p>Access is tailored to your role, so you see only the people, payroll, and tasks that matter to you.</p>
+          <div className="auth-benefits">
+            <span>People</span><span>Payroll</span><span>Time off</span>
+          </div>
+        </section>
+
+        <section className="auth-card">
+          <p className="auth-eyebrow">Sign in</p>
+          <h2>Welcome back.</h2>
+          <p className="auth-card__subtitle">Use your work account to enter your workspace.</p>
 
           <form onSubmit={handleSubmit}>
-            <label>Work Email</label>
-            <input
-              type="email"
-              placeholder="name@company.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
+            <label>Work email</label>
+            <input type="email" placeholder="name@company.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
 
             <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
 
             {error && <p className="auth-card__error">{error}</p>}
 
             <button type="submit" disabled={submitting}>
-              {submitting ? 'Signing in...' : 'Sign In'}
+              {submitting ? 'Signing in...' : 'Continue to workspace -&gt;'}
             </button>
           </form>
-
-          <hr />
-          <p className="auth-card__note">Accounts are created by an administrator.</p>
-        </div>
+          <p className="auth-card__note">Accounts and permissions are managed by your administrator.</p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

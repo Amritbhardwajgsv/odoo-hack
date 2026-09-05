@@ -13,24 +13,16 @@ export default function AppHeader() {
 
   return (
     <header className="app-header">
-      <span className="brand app-header__brand">PeoplePay360</span>
+      <NavLink to="/" className="brand app-header__brand">PeoplePay360</NavLink>
       <nav className="app-header__nav">
-        {isHrStaff && (
-          <NavLink to="/employees" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Employees
-          </NavLink>
-        )}
-        {isAdmin && (
-          <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Users
-          </NavLink>
-        )}
+        <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>Workspace</NavLink>
+        {isHrStaff && <NavLink to="/employees" className={({ isActive }) => (isActive ? 'active' : '')}>People</NavLink>}
+        {isHrStaff && <NavLink to="/contracts" className={({ isActive }) => (isActive ? 'active' : '')}>Contracts</NavLink>}
+        {isAdmin && <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>Access</NavLink>}
       </nav>
       <div className="app-header__actions">
         <span className="signed-in-as">{user.employeeName}</span>
-        <button className="btn btn--ghost" onClick={logout}>
-          Sign out
-        </button>
+        <button className="btn btn--ghost" onClick={logout}>Sign out</button>
       </div>
     </header>
   );

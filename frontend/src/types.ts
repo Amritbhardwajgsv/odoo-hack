@@ -22,6 +22,12 @@ export interface AuthUser {
   roles: Role[];
   employeeId: string;
   employeeName: string | null;
+  // Sent by the API since the multi-role change. Optional so a session
+  // stored before that still works without forcing a re-login.
+  primaryRole?: Role;
+  landingPath?: string;
+  permissions?: string[];
+  navigation?: { key: string; label: string; path: string }[];
 }
 
 export interface ManagedUser {
@@ -107,6 +113,58 @@ export interface EmployeeCounts {
 
 export interface EmployeeDetail extends Employee {
   counts: EmployeeCounts;
+}
+
+export type ContractStatus = 'draft' | 'active' | 'expired' | 'terminated';
+
+export const CONTRACT_STATUSES: ContractStatus[] = ['draft', 'active', 'expired', 'terminated'];
+
+// 'active' reads as "Running" everywhere in the UI.
+export const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
+  draft: 'Draft',
+  active: 'Running',
+  expired: 'Expired',
+  terminated: 'Terminated',
+};
+
+export interface Contract {
+  id: string;
+  contractNumber: string;
+  employeeId: string;
+  employeeName: string;
+  department: Department;
+  jobPositionId: string | null;
+  jobPositionTitle: string | null;
+  workingScheduleId: string | null;
+  workingScheduleName: string | null;
+  workingScheduleHours: number | null;
+  salaryStructureId: string;
+  salaryStructureName: string | null;
+  wage: number;
+  startDate: string;
+  endDate: string | null;
+  status: ContractStatus;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface SalaryStructure {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+export interface Overview {
+  activeEmployees: number;
+  totalEmployees: number;
+  runningContracts: number;
+  totalContracts: number;
+  activeAccounts: number;
+  employeesWithoutLogin: number;
+  employeesWithoutContract: number;
+  monthlyWageTotal: number;
+  departments: { department: Department; headcount: number; wageTotal: number }[];
 }
 
 export interface JobPosition {

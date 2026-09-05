@@ -8,4 +8,12 @@ async function listWorkingSchedules(_request, response) {
   response.json(await lookupsService.listWorkingSchedules());
 }
 
-module.exports = { listJobPositions, listWorkingSchedules };
+async function listSalaryStructures(_request, response) {
+  response.json(await lookupsService.listSalaryStructures());
+}
+
+async function overview(_request, response) {
+  response.json(await lookupsService.overview());
+}
+
+module.exports = { listJobPositions, listWorkingSchedules, listSalaryStructures, overview };

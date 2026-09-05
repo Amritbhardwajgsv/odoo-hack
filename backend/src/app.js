@@ -10,7 +10,13 @@ const healthRouter = require('./routes/health.routes');
 const authRouter = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
 const employeesRouter = require('./routes/employees.routes');
-const { jobPositionsRouter, workingSchedulesRouter } = require('./routes/lookups.routes');
+const contractsRouter = require('./routes/contracts.routes');
+const {
+  jobPositionsRouter,
+  workingSchedulesRouter,
+  salaryStructuresRouter,
+  overviewRouter,
+} = require('./routes/lookups.routes');
 
 const app = express();
 
@@ -26,8 +32,11 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', requireAuth, requireRole('admin'), usersRouter);
 app.use('/api/employees', requireAuth, requireRole(...HR_STAFF), employeesRouter);
+app.use('/api/contracts', requireAuth, requireRole(...HR_STAFF), contractsRouter);
 app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPositionsRouter);
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
+app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);
+app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
 
 app.use(notFound);
 app.use(errorHandler);
