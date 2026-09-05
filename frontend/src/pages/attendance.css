@@ -55,3 +55,42 @@
   text-transform: uppercase;
   letter-spacing: .04em;
 }
+
+/* Labelled date filter - reads as a control rather than a stray chip. */
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+.date-filter label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.date-filter input[type='date'] {
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+.date-filter input[type='date']:focus { outline: none; }
+.date-filter button {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.date-filter button:hover { border-color: var(--color-primary); color: var(--color-text); }

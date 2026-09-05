@@ -45,7 +45,8 @@ export default function AttendancePage() {
 
   const [records, setRecords] = useState<Attendance[]>([]);
   const [search, setSearch] = useState('');
-  const [todayOnly, setTodayOnly] = useState(false);
+  // Empty means every date; the API takes any day, not just today.
+  const [dateFilter, setDateFilter] = useState('');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Attendance | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export default function AttendancePage() {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (employeeId) params.set('employeeId', employeeId);
-    if (todayOnly) params.set('date', todayIso());
+    if (dateFilter) params.set('date', dateFilter);
     const query = params.toString();
     try {
       setRecords(await api.get<Attendance[]>(`/api/attendance${query ? `?${query}` : ''}`));
@@ -67,7 +68,7 @@ export default function AttendancePage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, todayOnly, employeeId]);
+  }, [search, dateFilter, employeeId]);
 
   useEffect(() => {
     if (!employeeId) {
@@ -107,12 +108,23 @@ export default function AttendancePage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <button
-            className={`filter-chip ${todayOnly ? 'filter-chip--active' : ''}`}
-            onClick={() => setTodayOnly((value) => !value)}
-          >
-            Today
-          </button>
+          <div className="date-filter">
+            <label htmlFor="attendance-date">Date</label>
+            <input
+              id="attendance-date"
+              type="date"
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+            />
+            <button type="button" onClick={() => setDateFilter(todayIso())}>
+              Today
+            </button>
+            {dateFilter && (
+              <button type="button" onClick={() => setDateFilter('')}>
+                Clear
+              </button>
+            )}
+          </div>
           {employeeId && (
             <button className="filter-chip filter-chip--active" onClick={clearEmployeeFilter}>
               Employee: {employeeName ?? '...'} &times;
@@ -166,8 +178,10 @@ export default function AttendancePage() {
         </table>
 
         <p className="admin-page__note">
-          Useful note: list view should help users review raw check-in / check-out data and
-          identify missing punches quickly.
+          {dateFilter
+            ? `Showing ${formatDate(dateFilter)} only — clear the date to see every record.`
+            : 'Showing all dates. Pick a date to narrow the list, or use Today for this shift.'}{' '}
+          A dash in Check In or Check Out means the punch is missing.
         </p>
 
         {employeeId && (
