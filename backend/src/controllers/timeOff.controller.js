@@ -107,12 +107,116 @@ async function refuse(request, response) {
   respondToDecision(await service.refuseRequest(request.params.id, request.user.sub), response);
 }
 
-async function listTypes(_request, response) {
-  response.json(await service.listTypes());
+// ------------------------------------------------------------------ types
+const typeSchema = z.object({
+  name: z.string().min(1),
+  unit: z.enum(['days', 'hours']).optional().default('days'),
+  requiresAllocation: z.boolean().optional(),
+  requiresApproval: z.boolean().optional(),
+  affectsPayroll: z.boolean().optional(),
+  approvalBy: z.string().min(1).optional(),
+  displayColor: z.string().min(1).optional(),
+  isActive: z.boolean().optional(),
+  workEntry: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+async function listTypes(request, response) {
+  response.json(await service.listTypes({ search: request.query.search }));
 }
 
+async function getType(request, response) {
+  const type = await service.findTypeById(request.params.id);
+  if (!type) return response.status(404).json({ message: 'Time off type not found' });
+  response.json(type);
+}
+
+async function createType(request, response) {
+  const parsed = typeSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+  response.status(201).json(await service.createType(parsed.data));
+}
+
+async function updateType(request, response) {
+  const parsed = typeSchema.partial().safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+  const type = await service.updateType(request.params.id, parsed.data);
+  if (!type) return response.status(404).json({ message: 'Time off type not found' });
+  response.json(type);
+}
+
+// ------------------------------------------------------------ allocations
+const allocationSchema = z.object({
+  employeeId: z.string().uuid(),
+  timeOffTypeId: z.string().uuid(),
+  allocated: z.coerce.number().positive(),
+  validFrom: z.string().min(1),
+  validTo: z.string().nullable().optional(),
+  status: z.enum(['draft', 'approved']).optional(),
+  description: z.string().nullable().optional(),
+});
+
 async function listAllocations(request, response) {
-  response.json(await service.listAllocations({ employeeId: request.query.employeeId }));
+  const { employeeId, search, status } = request.query;
+  response.json(await service.listAllocations({ employeeId, search, status }));
+}
+
+async function getAllocation(request, response) {
+  const allocation = await service.findAllocationById(request.params.id);
+  if (!allocation) return response.status(404).json({ message: 'Allocation not found' });
+  response.json(allocation);
+}
+
+async function createAllocation(request, response) {
+  const parsed = allocationSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+  try {
+    response.status(201).json(await service.createAllocation(parsed.data));
+  } catch (error) {
+    if (!handleConstraintError(error, response)) throw error;
+  }
+}
+
+async function updateAllocation(request, response) {
+  const parsed = allocationSchema.partial().safeParse(request.body);
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+  const allocation = await service.updateAllocation(request.params.id, parsed.data);
+  if (!allocation) return response.status(404).json({ message: 'Allocation not found' });
+  response.json(allocation);
+}
+
+function respondToAllocationDecision(result, response) {
+  if (result.error === 'not_found') {
+    return response.status(404).json({ message: 'Allocation not found' });
+  }
+  if (result.error === 'already_consumed') {
+    return response.status(409).json({
+      message: `${result.taken} already taken from this balance, so it cannot be withdrawn`,
+    });
+  }
+  return response.json(result.allocation);
+}
+
+async function approveAllocation(request, response) {
+  respondToAllocationDecision(
+    await service.decideAllocation(request.params.id, 'approved', request.user.sub),
+    response
+  );
+}
+
+async function refuseAllocation(request, response) {
+  respondToAllocationDecision(
+    await service.decideAllocation(request.params.id, 'refused', request.user.sub),
+    response
+  );
 }
 
 module.exports = {
@@ -123,5 +227,13 @@ module.exports = {
   approve,
   refuse,
   listTypes,
+  getType,
+  createType,
+  updateType,
   listAllocations,
+  getAllocation,
+  createAllocation,
+  updateAllocation,
+  approveAllocation,
+  refuseAllocation,
 };

@@ -99,3 +99,20 @@
 .balance-note strong {
   color: var(--color-text);
 }
+
+/* Remaining is the number people actually look for. */
+.balance-remaining { color: var(--color-text); font-weight: 600; }
+
+.type-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  vertical-align: middle;
+}
+.type-dot--blue   { background: #60a5fa; }
+.type-dot--green  { background: #4ade80; }
+.type-dot--red    { background: #f87171; }
+.type-dot--amber  { background: #fbbf24; }
+.type-dot--purple { background: #a78bfa; }

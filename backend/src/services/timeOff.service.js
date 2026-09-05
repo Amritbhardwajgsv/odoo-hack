@@ -251,37 +251,102 @@ async function refuseRequest(id, approverUserId) {
   }
 }
 
-async function listTypes() {
-  const { rows } = await pool.query('SELECT * FROM time_off_types ORDER BY name');
-  return rows.map((row) => ({
+function mapType(row) {
+  return {
     id: row.id,
     name: row.name,
     unit: row.unit,
     requiresAllocation: row.requires_allocation,
     requiresApproval: row.requires_approval,
     affectsPayroll: row.affects_payroll,
-  }));
+    approvalBy: row.approval_by,
+    displayColor: row.display_color,
+    isActive: row.is_active,
+    workEntry: row.work_entry,
+    notes: row.notes,
+  };
 }
 
-async function listAllocations({ employeeId } = {}) {
+async function listTypes({ search } = {}) {
   const params = [];
   let where = '';
-  if (employeeId) {
-    params.push(employeeId);
-    where = `WHERE a.employee_id = $${params.length}`;
+  if (search) {
+    params.push(`%${search}%`);
+    where = `WHERE name ILIKE $${params.length}`;
   }
-
   const { rows } = await pool.query(
-    `SELECT a.*, e.full_name AS employee_name, t.name AS type_name, t.unit
-       FROM time_off_allocations a
-       JOIN employees e ON e.id = a.employee_id
-       JOIN time_off_types t ON t.id = a.time_off_type_id
-       ${where}
-       ORDER BY e.full_name, t.name`,
+    `SELECT * FROM time_off_types ${where} ORDER BY name`,
     params
   );
+  return rows.map(mapType);
+}
 
-  return rows.map((row) => ({
+async function findTypeById(id) {
+  const { rows } = await pool.query('SELECT * FROM time_off_types WHERE id = $1', [id]);
+  return rows[0] ? mapType(rows[0]) : null;
+}
+
+const TYPE_COLUMNS = {
+  name: 'name',
+  unit: 'unit',
+  requiresAllocation: 'requires_allocation',
+  requiresApproval: 'requires_approval',
+  affectsPayroll: 'affects_payroll',
+  approvalBy: 'approval_by',
+  displayColor: 'display_color',
+  isActive: 'is_active',
+  workEntry: 'work_entry',
+  notes: 'notes',
+};
+
+async function createType(data) {
+  const columns = [];
+  const values = [];
+  for (const [key, column] of Object.entries(TYPE_COLUMNS)) {
+    if (data[key] !== undefined) {
+      columns.push(column);
+      values.push(data[key] === '' ? null : data[key]);
+    }
+  }
+  const placeholders = columns.map((_, i) => `$${i + 1}`);
+  const { rows } = await pool.query(
+    `INSERT INTO time_off_types (${columns.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`,
+    values
+  );
+  return findTypeById(rows[0].id);
+}
+
+async function updateType(id, data) {
+  const sets = [];
+  const params = [];
+  for (const [key, column] of Object.entries(TYPE_COLUMNS)) {
+    if (data[key] !== undefined) {
+      params.push(data[key] === '' ? null : data[key]);
+      sets.push(`${column} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) return findTypeById(id);
+
+  params.push(id);
+  const { rows } = await pool.query(
+    `UPDATE time_off_types SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING id`,
+    params
+  );
+  return rows[0] ? findTypeById(id) : null;
+}
+
+const ALLOCATION_SELECT = `
+  SELECT a.*, e.full_name AS employee_name, t.name AS type_name, t.unit,
+         approver_emp.full_name AS approver_name
+    FROM time_off_allocations a
+    JOIN employees e ON e.id = a.employee_id
+    JOIN time_off_types t ON t.id = a.time_off_type_id
+    LEFT JOIN users approver ON approver.id = a.approved_by
+    LEFT JOIN employees approver_emp ON approver_emp.id = approver.employee_id
+`;
+
+function mapAllocation(row) {
+  return {
     id: row.id,
     employeeId: row.employee_id,
     employeeName: row.employee_name,
@@ -290,11 +355,116 @@ async function listAllocations({ employeeId } = {}) {
     unit: row.unit,
     allocated: Number(row.allocated_amount),
     taken: Number(row.taken_amount),
+    // remaining_amount is a generated column, so the arithmetic is the
+    // database's, not something the app can get out of step with.
     remaining: Number(row.remaining_amount),
     validFrom: row.valid_from,
     validTo: row.valid_to,
+    // "2026 Annual Balance"
+    validityLabel: row.valid_from
+      ? `${new Date(row.valid_from).getFullYear()} Annual Balance`
+      : null,
     status: row.status,
-  }));
+    approverName: row.approver_name,
+    approvedAt: row.approved_at,
+    description: row.description,
+  };
+}
+
+async function listAllocations({ employeeId, search, status } = {}) {
+  const conditions = [];
+  const params = [];
+
+  if (employeeId) {
+    params.push(employeeId);
+    conditions.push(`a.employee_id = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${search}%`);
+    conditions.push(`(e.full_name ILIKE $${params.length} OR t.name ILIKE $${params.length})`);
+  }
+  if (status) {
+    params.push(status);
+    conditions.push(`a.status = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const { rows } = await pool.query(
+    `${ALLOCATION_SELECT} ${where}
+      ORDER BY (a.status = 'draft') DESC, e.full_name, t.name`,
+    params
+  );
+  return rows.map(mapAllocation);
+}
+
+async function findAllocationById(id) {
+  const { rows } = await pool.query(`${ALLOCATION_SELECT} WHERE a.id = $1`, [id]);
+  return rows[0] ? mapAllocation(rows[0]) : null;
+}
+
+async function createAllocation(data) {
+  const { rows } = await pool.query(
+    `INSERT INTO time_off_allocations
+       (employee_id, time_off_type_id, allocated_amount, taken_amount,
+        valid_from, valid_to, status, description)
+     VALUES ($1, $2, $3, 0, $4, $5, $6, $7) RETURNING id`,
+    [
+      data.employeeId,
+      data.timeOffTypeId,
+      data.allocated,
+      data.validFrom,
+      data.validTo || null,
+      data.status || 'draft',
+      data.description || null,
+    ]
+  );
+  return findAllocationById(rows[0].id);
+}
+
+async function updateAllocation(id, data) {
+  const sets = [];
+  const params = [];
+  const assign = (column, value) => {
+    if (value !== undefined) {
+      params.push(value === '' ? null : value);
+      sets.push(`${column} = $${params.length}`);
+    }
+  };
+  assign('allocated_amount', data.allocated);
+  assign('valid_from', data.validFrom);
+  assign('valid_to', data.validTo);
+  assign('description', data.description);
+  if (sets.length === 0) return findAllocationById(id);
+
+  params.push(id);
+  const { rows } = await pool.query(
+    `UPDATE time_off_allocations SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING id`,
+    params
+  );
+  return rows[0] ? findAllocationById(id) : null;
+}
+
+// Approving an allocation is what makes the balance usable by requests.
+async function decideAllocation(id, status, approverUserId) {
+  const { rows: existing } = await pool.query(
+    'SELECT taken_amount FROM time_off_allocations WHERE id = $1',
+    [id]
+  );
+  if (existing.length === 0) return { error: 'not_found' };
+
+  // Withdrawing a balance that leave has already been taken from would
+  // leave approved requests pointing at days nobody granted.
+  if (status !== 'approved' && Number(existing[0].taken_amount) > 0) {
+    return { error: 'already_consumed', taken: Number(existing[0].taken_amount) };
+  }
+
+  await pool.query(
+    `UPDATE time_off_allocations
+        SET status = $1, approved_by = $2, approved_at = now()
+      WHERE id = $3`,
+    [status, approverUserId, id]
+  );
+  return { allocation: await findAllocationById(id) };
 }
 
 module.exports = {
@@ -305,6 +475,13 @@ module.exports = {
   approveRequest,
   refuseRequest,
   listTypes,
+  findTypeById,
+  createType,
+  updateType,
   listAllocations,
+  findAllocationById,
+  createAllocation,
+  updateAllocation,
+  decideAllocation,
   durationBetween,
 };

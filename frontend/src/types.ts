@@ -222,6 +222,11 @@ export interface TimeOffType {
   requiresAllocation: boolean;
   requiresApproval: boolean;
   affectsPayroll: boolean;
+  approvalBy: string;
+  displayColor: string;
+  isActive: boolean;
+  workEntry: string | null;
+  notes: string | null;
 }
 
 export interface TimeOffRequest {
@@ -258,7 +263,11 @@ export interface TimeOffAllocation {
   remaining: number;
   validFrom: string;
   validTo: string | null;
+  validityLabel: string | null;
   status: string;
+  approverName: string | null;
+  approvedAt: string | null;
+  description: string | null;
 }
 
 export const DAY_NAMES = [

@@ -13,6 +13,10 @@ import WorkingSchedulesPage from './pages/WorkingSchedulesPage';
 import WorkingScheduleDetailPage from './pages/WorkingScheduleDetailPage';
 import TimeOffPage from './pages/TimeOffPage';
 import TimeOffDetailPage from './pages/TimeOffDetailPage';
+import AllocationsPage from './pages/AllocationsPage';
+import AllocationDetailPage from './pages/AllocationDetailPage';
+import TimeOffTypesPage from './pages/TimeOffTypesPage';
+import TimeOffTypeDetailPage from './pages/TimeOffTypeDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
 
@@ -92,6 +96,38 @@ function App() {
             element={
               <ProtectedRoute roles={[...HR_STAFF]}>
                 <TimeOffDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/allocations"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <AllocationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/allocations/:id"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <AllocationDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/time-off-types"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <TimeOffTypesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/time-off-types/:id"
+            element={
+              <ProtectedRoute roles={[...HR_STAFF]}>
+                <TimeOffTypeDetailPage />
               </ProtectedRoute>
             }
           />
