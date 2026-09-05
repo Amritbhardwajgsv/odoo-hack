@@ -180,6 +180,230 @@
   color: var(--color-text-muted);
 }
 
+/* ------------------------------------------------------- centred modals */
+/* The payrun wizard is a decision, not a side panel, so it sits centred and
+   holds the screen until the user continues or discards. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 20;
+}
+
+.modal {
+  width: min(880px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 26px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.modal--sm {
+  width: min(460px, 100%);
+}
+
+.modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--color-text);
+}
+
+.modal__close {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal__close:hover {
+  color: var(--color-text);
+}
+
+.modal__body {
+  overflow-y: auto;
+}
+
+.modal__body--table {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.modal__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.modal__count {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.modal__actions--left {
+  justify-content: flex-start;
+}
+
+.btn--link {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.btn--link:hover {
+  color: var(--color-text);
+}
+
+/* Label above the control, as drawn on the New Pay Run popup. */
+.stack-field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.stack-field > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.stack-field input,
+.stack-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.period-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pick-col {
+  width: 44px;
+  text-align: center;
+}
+
+.pick-col input {
+  cursor: pointer;
+}
+
+.pick-flag {
+  margin-left: 10px;
+  color: #fbbf24;
+  font-size: 11px;
+}
+
+/* ----------------------------------------------------- payrun form view */
+.payrun-form {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 320px);
+  align-items: center;
+  gap: 14px 20px;
+  margin-bottom: 30px;
+}
+
+.payrun-form > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.payrun-form > input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.section-heading {
+  margin: 0 0 14px;
+  color: var(--color-primary-dark);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Send is the outward-facing action, so it sits apart from the lifecycle
+   buttons rather than in the same row. */
+.btn--send {
+  background: #a78bfa;
+  color: #17161a;
+}
+
+.btn--send:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pdf-link {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary-dark);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pdf-link:hover {
+  text-decoration: underline;
+}
+
+.warn-cell {
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+.warn-cell--none {
+  color: var(--color-text-muted);
+}
+
+.warn-cell--blocking {
+  color: var(--color-danger);
+}
+
 @media (max-width: 900px) {
   .payrun-card {
     grid-template-columns: 1fr auto;
@@ -187,5 +411,9 @@
   }
   .payrun-card__open {
     display: none;
+  }
+  .payrun-form {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }

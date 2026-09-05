@@ -312,6 +312,7 @@ export interface Payslip {
   payrunName: string;
   employeeId: string;
   employeeName: string;
+  employeeEmail: string | null;
   department: Department;
   jobTitle: string | null;
   contractId: string;
@@ -320,13 +321,54 @@ export interface Payslip {
   periodStart: string;
   periodEnd: string;
   workedDays: number | null;
+  basicAmount: number | null;
   grossAmount: number | null;
   netAmount: number | null;
   status: PayslipStatus;
+  hasBankAccount: boolean;
   warningCount: number;
   blockingCount: number;
+  // Worst unresolved warning, so the table can show one short label per row.
+  topWarningCode: WarningCode | null;
   computedAt: string | null;
   paidAt: string | null;
+}
+
+export type WarningCode =
+  | 'no_account'
+  | 'duplicate'
+  | 'no_attendance'
+  | 'zero_wage'
+  | 'negative_net'
+  | 'contract_ending'
+  | 'rule_error';
+
+// Short enough for a table cell; the full message lives on the payslip.
+export const WARNING_LABELS: Record<WarningCode, string> = {
+  no_account: 'A/C missing',
+  duplicate: 'Duplicate',
+  no_attendance: 'No attendance',
+  zero_wage: 'Zero wage',
+  negative_net: 'Net ≤ 0',
+  contract_ending: 'Contract ending',
+  rule_error: 'Rule error',
+};
+
+export interface EligibleEmployee {
+  employeeId: string;
+  fullName: string;
+  department: Department;
+  contractId: string;
+  wage: number;
+  contractStart: string;
+  scheduleName: string | null;
+  weeklyHours: number | null;
+  hasBankAccount: boolean;
+}
+
+export interface SendPayslipsResult {
+  sent: string[];
+  failed: { employee: string; reason: string }[];
 }
 
 export type SalaryCategory =
@@ -356,6 +398,7 @@ export interface PayslipLine {
 
 export interface PayslipWarning {
   id: string;
+  code: WarningCode | null;
   severity: 'blocking' | 'advisory';
   message: string;
   isResolved: boolean;

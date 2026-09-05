@@ -122,7 +122,78 @@ const FILL_EMPLOYEES_SQL = `
   ON CONFLICT (payrun_id, employee_id) DO NOTHING
 `;
 
-async function createPayrun({ name, salaryStructureId, department, periodStart, periodEnd }, userId) {
+// Everyone who could be paid for a period, with the details the selection
+// screen shows. This is a preview only - reading it creates nothing, so the
+// wizard can show the list before a payrun exists.
+async function eligibleEmployees({ periodStart, periodEnd, department, search } = {}) {
+  const params = [periodStart, periodEnd, department || null];
+  let searchClause = '';
+  if (search) {
+    params.push(`%${search}%`);
+    searchClause = `AND e.full_name ILIKE $${params.length}`;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (e.id)
+            e.id            AS employee_id,
+            e.full_name,
+            e.department,
+            e.bank_account,
+            c.id            AS contract_id,
+            c.wage,
+            c.start_date    AS contract_start,
+            ws.name         AS schedule_name,
+            ws.total_weekly_hours
+       FROM contracts c
+       JOIN employees e ON e.id = c.employee_id
+       LEFT JOIN working_schedules ws ON ws.id = c.working_schedule_id
+      WHERE c.status = 'active'
+        AND e.status = 'active'
+        AND c.start_date <= $2::date
+        AND (c.end_date IS NULL OR c.end_date >= $1::date)
+        AND ($3::department_type IS NULL OR e.department = $3::department_type)
+        ${searchClause}
+      ORDER BY e.id, c.start_date DESC`,
+    params
+  );
+
+  return rows
+    .map((row) => ({
+      employeeId: row.employee_id,
+      fullName: row.full_name,
+      department: row.department,
+      contractId: row.contract_id,
+      wage: Number(row.wage),
+      contractStart: row.contract_start,
+      scheduleName: row.schedule_name,
+      weeklyHours: row.total_weekly_hours === null ? null : Number(row.total_weekly_hours),
+      // Surfaced here so a missing account is visible while picking people,
+      // not only after the payrun has been computed.
+      hasBankAccount: Boolean(row.bank_account),
+    }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+// Only the ids that are genuinely payable for this period survive, so a
+// stale or hand-edited selection can never put someone on a payrun who has
+// no contract to pay them under.
+const FILL_SELECTED_SQL = `
+  INSERT INTO payrun_employees (payrun_id, employee_id)
+  SELECT DISTINCT $1::uuid, c.employee_id
+    FROM contracts c
+    JOIN employees e ON e.id = c.employee_id
+   WHERE c.status = 'active'
+     AND e.status = 'active'
+     AND c.start_date <= $3::date
+     AND (c.end_date IS NULL OR c.end_date >= $2::date)
+     AND c.employee_id = ANY($4::uuid[])
+  ON CONFLICT (payrun_id, employee_id) DO NOTHING
+`;
+
+async function createPayrun(
+  { name, salaryStructureId, department, periodStart, periodEnd, employeeIds },
+  userId
+) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -132,7 +203,16 @@ async function createPayrun({ name, salaryStructureId, department, periodStart, 
       [name, salaryStructureId, department || null, periodStart, periodEnd, userId]
     );
     const payrunId = rows[0].id;
-    await client.query(FILL_EMPLOYEES_SQL, [payrunId, periodStart, periodEnd, department || null]);
+
+    // An explicit selection is honoured exactly - including an empty one,
+    // which must never quietly turn into "everybody". Only an omitted
+    // selection falls back to auto-filling the period.
+    if (employeeIds !== undefined) {
+      await client.query(FILL_SELECTED_SQL, [payrunId, periodStart, periodEnd, employeeIds]);
+    } else {
+      await client.query(FILL_EMPLOYEES_SQL, [payrunId, periodStart, periodEnd, department || null]);
+    }
+
     await client.query('COMMIT');
     return findById(payrunId);
   } catch (error) {
@@ -260,13 +340,17 @@ function computeLines(rules, { wage, workedDays }) {
 const PAYRUN_EMPLOYEES_SQL = `
   SELECT pe.employee_id,
          e.full_name,
+         e.bank_account,
          c.id        AS contract_id,
          c.wage      AS wage,
          c.end_date  AS contract_end,
          (SELECT COUNT(*) FROM attendance a
            WHERE a.employee_id = pe.employee_id
              AND a.attendance_date BETWEEN $2 AND $3
-             AND a.status IN ('present', 'late')) AS worked_days
+             AND a.status IN ('present', 'late')) AS worked_days,
+         -- Paying somebody twice for the same dates out of two payruns is
+         -- the expensive mistake, so it is detected while computing.
+         dup.payrun_name AS duplicate_of
     FROM payrun_employees pe
     JOIN employees e ON e.id = pe.employee_id
     LEFT JOIN LATERAL (
@@ -279,26 +363,67 @@ const PAYRUN_EMPLOYEES_SQL = `
           ORDER BY c.start_date DESC
           LIMIT 1
     ) c ON true
+    LEFT JOIN LATERAL (
+         SELECT p2.name AS payrun_name
+           FROM payslips ps2
+           JOIN payruns p2 ON p2.id = ps2.payrun_id
+          WHERE ps2.employee_id = pe.employee_id
+            AND ps2.payrun_id <> $1
+            AND p2.period_start <= $3
+            AND p2.period_end   >= $2
+          ORDER BY p2.period_start
+          LIMIT 1
+    ) dup ON true
    WHERE pe.payrun_id = $1
    ORDER BY e.full_name
 `;
 
 function warningsFor(row, net, problems, periodEnd) {
-  const warnings = problems.map((message) => ({ severity: 'advisory', message }));
+  const warnings = problems.map((message) => ({
+    code: 'rule_error',
+    severity: 'advisory',
+    message,
+  }));
 
   if (Number(row.wage) <= 0) {
     warnings.push({
+      code: 'zero_wage',
       severity: 'blocking',
       message: 'Contract wage is zero, so there is nothing to pay',
     });
   } else if (net <= 0) {
     // Only worth raising separately when a real wage still nets out to nothing,
     // which means the rules are taking back everything they gave.
-    warnings.push({ severity: 'blocking', message: 'Net pay came out zero or negative' });
+    warnings.push({
+      code: 'negative_net',
+      severity: 'blocking',
+      message: 'Net pay came out zero or negative',
+    });
+  }
+
+  // Missing account details and duplicate payslips are advisory on purpose:
+  // they have to be visible before payroll is finalised, but they are for a
+  // person to judge, not something the system should refuse outright.
+  // Blocking is reserved for payslips that are arithmetically unpayable.
+  if (!row.bank_account) {
+    warnings.push({
+      code: 'no_account',
+      severity: 'advisory',
+      message: 'No bank account on file, so this payslip has nowhere to be paid out to',
+    });
+  }
+
+  if (row.duplicate_of) {
+    warnings.push({
+      code: 'duplicate',
+      severity: 'advisory',
+      message: `Already has a payslip in "${row.duplicate_of}", which covers overlapping dates`,
+    });
   }
 
   if (Number(row.worked_days) === 0) {
     warnings.push({
+      code: 'no_attendance',
       severity: 'advisory',
       message: 'No attendance was recorded for this employee in this period',
     });
@@ -306,6 +431,7 @@ function warningsFor(row, net, problems, periodEnd) {
   // Only a contract actually running out inside the period matters here.
   if (row.contract_end && new Date(row.contract_end) <= new Date(periodEnd)) {
     warnings.push({
+      code: 'contract_ending',
       severity: 'advisory',
       message: `Contract ends ${String(row.contract_end).slice(0, 10)}, inside this payroll period`,
     });
@@ -383,8 +509,9 @@ async function compute(id) {
 
       for (const warning of warningsFor(row, net, problems, payrun.periodEnd)) {
         await client.query(
-          `INSERT INTO payslip_warnings (payslip_id, severity, message) VALUES ($1, $2, $3)`,
-          [payslipId, warning.severity, warning.message]
+          `INSERT INTO payslip_warnings (payslip_id, code, severity, message)
+           VALUES ($1, $2, $3, $4)`,
+          [payslipId, warning.code, warning.severity, warning.message]
         );
       }
       computed += 1;
@@ -480,6 +607,7 @@ function mapPayslip(row) {
     payrunName: row.payrun_name,
     employeeId: row.employee_id,
     employeeName: row.employee_name,
+    employeeEmail: row.employee_email,
     department: row.department,
     jobTitle: row.job_title,
     contractId: row.contract_id,
@@ -488,11 +616,14 @@ function mapPayslip(row) {
     periodStart: row.period_start,
     periodEnd: row.period_end,
     workedDays: row.worked_days === null ? null : Number(row.worked_days),
+    basicAmount: row.basic_amount === undefined ? null : Number(row.basic_amount),
     grossAmount: row.gross_amount === null ? null : Number(row.gross_amount),
     netAmount: row.net_amount === null ? null : Number(row.net_amount),
     status: row.status,
+    hasBankAccount: Boolean(row.bank_account),
     warningCount: Number(row.warning_count ?? 0),
     blockingCount: Number(row.blocking_count ?? 0),
+    topWarningCode: row.top_warning_code ?? null,
     computedAt: row.computed_at,
     paidAt: row.paid_at,
   };
@@ -502,15 +633,26 @@ const PAYSLIP_SELECT = `
   SELECT ps.*,
          e.full_name  AS employee_name,
          e.department AS department,
+         e.email      AS employee_email,
+         e.bank_account,
          jp.title     AS job_title,
          c.contract_number,
          c.wage,
          p.name       AS payrun_name,
+         -- The payslip table shows Basic as its own column; it is the sum of
+         -- whatever the structure classified as basic, not a fixed rule.
+         (SELECT COALESCE(SUM(l.amount), 0) FROM payslip_lines l
+           WHERE l.payslip_id = ps.id AND l.category = 'basic') AS basic_amount,
          (SELECT COUNT(*) FROM payslip_warnings w
            WHERE w.payslip_id = ps.id AND w.is_resolved = false) AS warning_count,
          (SELECT COUNT(*) FROM payslip_warnings w
            WHERE w.payslip_id = ps.id AND w.is_resolved = false
-             AND w.severity = 'blocking') AS blocking_count
+             AND w.severity = 'blocking') AS blocking_count,
+         -- Worst unresolved warning, so one row can show one short label.
+         (SELECT w.code FROM payslip_warnings w
+           WHERE w.payslip_id = ps.id AND w.is_resolved = false
+           ORDER BY (w.severity = 'blocking') DESC, w.created_at
+           LIMIT 1) AS top_warning_code
     FROM payslips ps
     JOIN employees e   ON e.id = ps.employee_id
     JOIN contracts c   ON c.id = ps.contract_id
@@ -558,9 +700,9 @@ async function findPayslipById(id) {
       [id]
     ),
     pool.query(
-      `SELECT id, severity, message, is_resolved
+      `SELECT id, code, severity, message, is_resolved
          FROM payslip_warnings WHERE payslip_id = $1
-        ORDER BY severity, created_at`,
+        ORDER BY (severity = 'blocking') DESC, created_at`,
       [id]
     ),
   ]);
@@ -576,6 +718,7 @@ async function findPayslipById(id) {
     })),
     warnings: warnings.rows.map((warning) => ({
       id: warning.id,
+      code: warning.code,
       severity: warning.severity,
       message: warning.message,
       isResolved: warning.is_resolved,
@@ -608,6 +751,7 @@ async function listUncomputed(payrunId) {
 module.exports = {
   listPayruns,
   listYears,
+  eligibleEmployees,
   findById,
   createPayrun,
   updatePayrun,

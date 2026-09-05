@@ -30,6 +30,19 @@ export default function PayslipDetailPage() {
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load payslip'));
   }, [id]);
 
+  // The PDF is behind bearer auth, so it is fetched and opened as a blob
+  // rather than linked to directly.
+  async function openPdf() {
+    setError(null);
+    try {
+      const url = await api.blob(`/api/payslips/${id}/pdf`);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not open the payslip PDF');
+    }
+  }
+
   if (!payslip) {
     return (
       <div>
@@ -60,11 +73,15 @@ export default function PayslipDetailPage() {
         </header>
 
         <div className="detail-actions">
-          <span />
+          <button className="btn btn--ghost" onClick={openPdf}>
+            Download PDF
+          </button>
           <span className={`payrun-status payrun-status--${payslip.status}`}>
             {PAYRUN_STATUS_LABELS[payslip.status]}
           </span>
         </div>
+
+        {error && <p className="error-banner">{error}</p>}
 
         <div className="detail-card">
           <div className="field-grid">

@@ -31,6 +31,15 @@ SELECT s.id, v.name, v.code, v.category::salary_category, v.sequence,
    SELECT 1 FROM salary_rules r WHERE r.structure_id = s.id AND r.code = v.code
  );
 
+-- ----------------------------------------------------------- bank accounts
+-- Payroll needs somewhere to send the money. Vikram is deliberately left
+-- without an account so the "A/C missing" warning has a real row to sit on.
+UPDATE employees
+   SET bank_account = 'HDFC' || lpad((abs(hashtext(email)) % 100000000)::text, 8, '0')
+ WHERE email LIKE '%@peoplepay360.com'
+   AND email <> 'vikram@peoplepay360.com'
+   AND bank_account IS NULL;
+
 -- -------------------------------------------------------------- attendance
 -- Payroll reads worked days from attendance, so without this every payslip
 -- would carry a "no attendance recorded" warning. Weekdays only.

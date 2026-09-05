@@ -2,6 +2,8 @@ const { z } = require('zod');
 
 const { DEPARTMENTS } = require('../constants');
 const service = require('../services/payruns.service');
+const mail = require('../services/payslipMail.service');
+const { buildPayslipPdf, payslipFileName } = require('../services/payslipPdf.service');
 
 const payrunSchema = z.object({
   name: z.string().min(1),
@@ -9,6 +11,9 @@ const payrunSchema = z.object({
   department: z.enum(DEPARTMENTS).nullable().optional(),
   periodStart: z.string().min(1),
   periodEnd: z.string().min(1),
+  // The wizard picks people before the payrun exists; when a selection is
+  // sent the payrun contains exactly those employees and nobody else.
+  employeeIds: z.array(z.string().uuid()).optional(),
 });
 
 function handleConstraintError(error, response) {
@@ -34,6 +39,19 @@ async function years(request, response) {
   response.json(await service.listYears());
 }
 
+// Step two of the wizard reads this before anything is created, so the user
+// sees exactly who they are about to pay.
+async function eligible(request, response) {
+  const { periodStart, periodEnd, department, search } = request.query;
+  if (!periodStart || !periodEnd) {
+    return response.status(400).json({ message: 'periodStart and periodEnd are required' });
+  }
+  if (new Date(periodEnd) < new Date(periodStart)) {
+    return response.status(400).json({ message: 'The period end must be on or after the period start' });
+  }
+  response.json(await service.eligibleEmployees({ periodStart, periodEnd, department, search }));
+}
+
 async function get(request, response) {
   const payrun = await service.findById(request.params.id);
   if (!payrun) return response.status(404).json({ message: 'Payrun not found' });
@@ -47,6 +65,10 @@ async function create(request, response) {
   }
   if (new Date(parsed.data.periodEnd) < new Date(parsed.data.periodStart)) {
     return response.status(400).json({ message: 'The period end must be on or after the period start' });
+  }
+  // Sending an empty selection is a mistake worth naming, not a payrun.
+  if (parsed.data.employeeIds && parsed.data.employeeIds.length === 0) {
+    return response.status(400).json({ message: 'Select at least one employee for this payrun' });
   }
 
   try {
@@ -149,10 +171,49 @@ async function getPayslip(request, response) {
   response.json(payslip);
 }
 
+// -------------------------------------------------------------- documents
+async function payslipPdf(request, response) {
+  const payslip = await service.findPayslipById(request.params.id);
+  if (!payslip) return response.status(404).json({ message: 'Payslip not found' });
+
+  response.setHeader('Content-Type', 'application/pdf');
+  response.setHeader('Content-Disposition', `inline; filename="${payslipFileName(payslip)}"`);
+  buildPayslipPdf(payslip).pipe(response);
+}
+
+async function sendPayslips(request, response) {
+  const payrun = await service.findById(request.params.id);
+  if (!payrun) return response.status(404).json({ message: 'Payrun not found' });
+  // Sending is the point of no return for the employee's inbox, so it waits
+  // until somebody has actually signed the payrun off.
+  if (payrun.status === 'draft' || payrun.status === 'computed') {
+    return response.status(409).json({
+      message: 'Validate the payrun before sending payslips',
+    });
+  }
+
+  const summaries = await service.listPayslips({ payrunId: payrun.id });
+  const payslips = await Promise.all(
+    summaries.map((summary) => service.findPayslipById(summary.id))
+  );
+
+  const result = await mail.sendPayslips(payslips);
+  if (result.error === 'not_configured') {
+    return response.status(503).json({
+      message:
+        'Email delivery is not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS to send payslips.',
+    });
+  }
+  response.json(result);
+}
+
 module.exports = {
   list,
   years,
+  eligible,
   get,
+  payslipPdf,
+  sendPayslips,
   create,
   update,
   compute,

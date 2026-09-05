@@ -3,15 +3,32 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import {
-  DEPARTMENT_LABELS,
   PAYRUN_STATUS_LABELS,
+  WARNING_LABELS,
   type Payrun,
   type PayrunPayslips,
+  type Payslip,
+  type SendPayslipsResult,
 } from '../types';
 import { formatMoney, formatPeriodDate } from './PayrunsPage';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
+
+// A row shows one short label; the payslip itself lists every warning.
+function warningCell(payslip: Payslip) {
+  if (payslip.warningCount === 0) {
+    return <span className="warn-cell warn-cell--none">&mdash;</span>;
+  }
+  const label = payslip.topWarningCode ? WARNING_LABELS[payslip.topWarningCode] : 'Warning';
+  const extra = payslip.warningCount > 1 ? ` +${payslip.warningCount - 1}` : '';
+  return (
+    <span className={payslip.blockingCount > 0 ? 'warn-cell warn-cell--blocking' : 'warn-cell'}>
+      {label}
+      {extra}
+    </span>
+  );
+}
 
 export default function PayrunDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +94,30 @@ export default function PayrunDetailPage() {
     });
   }
 
+  function sendPayslips() {
+    run(async () => {
+      const result = await api.post<SendPayslipsResult>(`/api/payruns/${id}/send-payslips`, {});
+      const sent = `Sent ${result.sent.length} payslip${result.sent.length === 1 ? '' : 's'}.`;
+      return result.failed.length
+        ? `${sent} Failed for ${result.failed.map((f) => `${f.employee} (${f.reason})`).join(', ')}.`
+        : sent;
+    });
+  }
+
+  // The PDF sits behind bearer auth, so it is fetched and opened as a blob
+  // rather than linked to directly.
+  async function openPdf(payslipId: string) {
+    setError(null);
+    try {
+      const url = await api.blob(`/api/payslips/${payslipId}/pdf`);
+      window.open(url, '_blank', 'noopener');
+      // Give the new tab time to load before releasing the object URL.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not open the payslip PDF');
+    }
+  }
+
   if (!payrun) {
     return (
       <div>
@@ -88,7 +129,7 @@ export default function PayrunDetailPage() {
     );
   }
 
-  const totalWarnings = payrun.warningCount + payrun.uncomputedCount;
+  const canSend = payrun.status === 'validated' || payrun.status === 'paid';
 
   return (
     <div>
@@ -98,101 +139,93 @@ export default function PayrunDetailPage() {
           <div>
             <h1>
               <Link to="/payruns" className="crumb">
-                Payruns
+                Payrun
               </Link>{' '}
               / {payrun.name}
             </h1>
             <p className="admin-page__subtitle">
-              {formatPeriodDate(payrun.periodStart)} &mdash; {formatPeriodDate(payrun.periodEnd)}
-              {' · '}
-              {payrun.salaryStructureName}
-              {payrun.department ? ` · ${DEPARTMENT_LABELS[payrun.department]}` : ' · All departments'}
+              Open one Payrun to compute and manage its payslips
             </p>
           </div>
         </header>
 
         <div className="detail-actions">
           <div className="payrun-actions">
-            {payrun.status !== 'paid' && (
-              <button className="btn btn--primary" disabled={busy} onClick={compute}>
-                {payrun.status === 'draft' ? 'Compute' : 'Recompute'}
-              </button>
-            )}
-            {payrun.status === 'computed' && (
-              <button className="btn btn--ghost" disabled={busy} onClick={() => setStatus('validated')}>
-                Validate
-              </button>
-            )}
-            {payrun.status === 'validated' && (
-              <button className="btn btn--ghost" disabled={busy} onClick={() => setStatus('paid')}>
-                Mark Paid
-              </button>
-            )}
+            <button
+              className="btn btn--primary"
+              disabled={busy || payrun.status === 'paid'}
+              onClick={compute}
+            >
+              {payrun.status === 'draft' ? 'COMPUTE' : 'RECOMPUTE'}
+            </button>
+            <button
+              className="btn btn--ghost"
+              disabled={busy || payrun.status !== 'computed'}
+              onClick={() => setStatus('validated')}
+            >
+              VALIDATE
+            </button>
+            <button
+              className="btn btn--ghost"
+              disabled={busy || payrun.status !== 'validated'}
+              onClick={() => setStatus('paid')}
+            >
+              MARK PAID
+            </button>
             {(payrun.status === 'computed' || payrun.status === 'validated') && (
               <button className="btn btn--ghost" disabled={busy} onClick={() => setStatus('draft')}>
-                Reset to Draft
+                RESET
               </button>
             )}
           </div>
-          <span className={`payrun-status payrun-status--${payrun.status}`}>
-            {PAYRUN_STATUS_LABELS[payrun.status]}
-          </span>
+          <button className="btn btn--send" disabled={busy || !canSend} onClick={sendPayslips}>
+            SEND PAYSLIPS
+          </button>
         </div>
 
         {error && <p className="error-banner">{error}</p>}
         {notice && <p className="admin-page__subtitle">{notice}</p>}
 
-        <div className="payrun-summary">
-          <div className="payrun-metric">
-            <span>Employees</span>
-            <strong>{payrun.employeeCount}</strong>
-          </div>
-          <div className="payrun-metric">
-            <span>Payslips</span>
-            <strong>{payrun.payslipCount}</strong>
-          </div>
-          <div className="payrun-metric">
-            <span>Gross total</span>
-            <strong className="money">{formatMoney(payrun.grossTotal)}</strong>
-          </div>
-          <div className="payrun-metric">
-            <span>Net total</span>
-            <strong className="money">{formatMoney(payrun.netTotal)}</strong>
-          </div>
-          <div className="payrun-metric">
-            <span>Warnings</span>
-            <strong
-              className={
-                payrun.blockingCount > 0
-                  ? 'payrun-warn payrun-warn--blocking'
-                  : totalWarnings === 0
-                    ? 'payrun-warn payrun-warn--none'
-                    : 'payrun-warn'
-              }
-            >
-              {totalWarnings === 0 ? 'None' : totalWarnings}
-            </strong>
-          </div>
+        <div className="payrun-form">
+          <span>Name</span>
+          <input type="text" value={payrun.name} readOnly />
+
+          <span>Salary Structure</span>
+          <input type="text" value={payrun.salaryStructureName ?? '—'} readOnly />
+
+          <span>Period</span>
+          <input
+            type="text"
+            value={`${formatPeriodDate(payrun.periodStart)} — ${formatPeriodDate(payrun.periodEnd)}`}
+            readOnly
+          />
+
+          <span>Status</span>
+          <input type="text" value={PAYRUN_STATUS_LABELS[payrun.status]} readOnly />
         </div>
+
+        <h2 className="section-heading">Payslips in this Payrun</h2>
 
         <table className="admin-table">
           <thead>
             <tr>
               <th>Employee</th>
-              <th>Job Position</th>
-              <th>Worked Days</th>
+              <th>Warning</th>
+              <th>Worked</th>
+              <th>Basic</th>
               <th>Gross</th>
               <th>Net</th>
               <th>Status</th>
-              <th>Warnings</th>
+              <th>PDF</th>
             </tr>
           </thead>
           <tbody>
             {slips.payslips.map((payslip) => (
               <tr key={payslip.id} onClick={() => navigate(`/payslips/${payslip.id}`)}>
                 <td>{payslip.employeeName}</td>
-                <td>{payslip.jobTitle ?? '—'}</td>
+                <td>{warningCell(payslip)}</td>
                 <td>{payslip.workedDays ?? '—'}</td>
+                <td className="money">{formatMoney(payslip.basicAmount ?? 0)}</td>
                 <td className="money">{formatMoney(payslip.grossAmount ?? 0)}</td>
                 <td className="money">{formatMoney(payslip.netAmount ?? 0)}</td>
                 <td>
@@ -201,23 +234,21 @@ export default function PayrunDetailPage() {
                   </span>
                 </td>
                 <td>
-                  <span
-                    className={
-                      payslip.blockingCount > 0
-                        ? 'payrun-warn payrun-warn--blocking'
-                        : payslip.warningCount === 0
-                          ? 'payrun-warn payrun-warn--none'
-                          : 'payrun-warn'
-                    }
+                  <button
+                    className="pdf-link"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openPdf(payslip.id);
+                    }}
                   >
-                    {payslip.warningCount === 0 ? 'None' : payslip.warningCount}
-                  </span>
+                    PDF
+                  </button>
                 </td>
               </tr>
             ))}
             {slips.payslips.length === 0 && (
               <tr>
-                <td colSpan={7} className="empty-row">
+                <td colSpan={8} className="empty-row">
                   {payrun.status === 'draft'
                     ? 'Nothing computed yet. Compute this payrun to generate payslips.'
                     : 'No payslips in this payrun.'}
@@ -241,10 +272,29 @@ export default function PayrunDetailPage() {
           </ul>
         )}
 
+        <div className="payrun-summary">
+          <div className="payrun-metric">
+            <span>Employees</span>
+            <strong>{payrun.employeeCount}</strong>
+          </div>
+          <div className="payrun-metric">
+            <span>Payslips</span>
+            <strong>{payrun.payslipCount}</strong>
+          </div>
+          <div className="payrun-metric">
+            <span>Gross total</span>
+            <strong className="money">{formatMoney(payrun.grossTotal)}</strong>
+          </div>
+          <div className="payrun-metric">
+            <span>Net total</span>
+            <strong className="money">{formatMoney(payrun.netTotal)}</strong>
+          </div>
+        </div>
+
         <p className="admin-page__note">
-          Computing rebuilds every payslip from the salary rules and the running contracts as they
-          are right now. A payrun must be validated before it can be marked paid, and a paid payrun
-          is locked.
+          Warnings such as missing account data or duplicate payslips are visible here before
+          payroll is finalized. Computing rebuilds every payslip from the salary rules and the
+          running contracts as they are right now, and a paid payrun is locked.
         </p>
 
         <button className="btn btn--ghost" onClick={() => navigate('/payruns')}>
