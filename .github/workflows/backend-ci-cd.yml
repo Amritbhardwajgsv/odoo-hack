@@ -18,15 +18,9 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Connects to the RDS instance below via secrets - requires RDS to be reachable
-    # from GitHub-hosted runners (publicly accessible, with a security group rule
-    # allowing inbound Postgres traffic), otherwise use a self-hosted runner in the VPC.
+    # Connects to the Neon Postgres instance via a single connection-string secret.
     env:
-      PGHOST: ${{ secrets.PGHOST }}
-      PGPORT: ${{ secrets.PGPORT }}
-      PGUSER: ${{ secrets.PGUSER }}
-      PGPASSWORD: ${{ secrets.PGPASSWORD }}
-      PGDATABASE: ${{ secrets.PGDATABASE }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
 
