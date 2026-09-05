@@ -41,3 +41,17 @@
 .attendance-status--on_leave {
   color: var(--color-text-muted);
 }
+
+/* Your own attendance is visible but not editable - an admin corrects it. */
+.admin-table tbody tr.row--locked { cursor: not-allowed; opacity: .72; }
+.admin-table tbody tr.row--locked:hover { background: transparent; }
+.lock-tag {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}

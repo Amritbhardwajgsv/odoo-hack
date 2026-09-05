@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 
 const pool = require('../../db/pool');
+const userCache = require('./userCache');
 const { PASSWORD_SALT_ROUNDS } = require('../constants');
 
 const SELECT_BASE = `
@@ -84,6 +85,10 @@ async function update(id, { roles, isActive, password }, client = pool) {
     `UPDATE users SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING id`,
     params
   );
+
+  // Drop the cached copy so a role change or deactivation applies to the
+  // very next request rather than waiting for the TTL.
+  userCache.invalidate(id);
   return rows[0] ? rows[0].id : null;
 }
 

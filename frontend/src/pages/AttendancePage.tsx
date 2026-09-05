@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
+import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import {
   ATTENDANCE_STATUSES,
@@ -31,6 +32,13 @@ function formatTime(value: string | null) {
 }
 
 export default function AttendancePage() {
+  const { user } = useAuth();
+  // Only an admin may touch their own attendance; everyone else needs an
+  // admin to do it, so their own rows are shown but not editable.
+  const isAdmin = user?.roles.includes('admin') ?? false;
+  const ownEmployeeId = user?.employeeId;
+  const canEdit = (record: Attendance) => isAdmin || record.employeeId !== ownEmployeeId;
+
   const [searchParams, setSearchParams] = useSearchParams();
   const employeeId = searchParams.get('employeeId') ?? '';
   const [employeeName, setEmployeeName] = useState<string | null>(null);
@@ -126,9 +134,15 @@ export default function AttendancePage() {
           </thead>
           <tbody>
             {records.map((record) => (
-              <tr key={record.id} onClick={() => setEditing(record)}>
+              <tr
+                key={record.id}
+                className={canEdit(record) ? '' : 'row--locked'}
+                onClick={() => canEdit(record) && setEditing(record)}
+                title={canEdit(record) ? undefined : 'Only an admin can correct your own attendance'}
+              >
                 <td>
                   {record.employeeName}
+                  {!canEdit(record) && <span className="lock-tag">your record</span>}
                   <span className="attendance-date"> &bull; {formatDate(record.attendanceDate)}</span>
                 </td>
                 <td>{formatTime(record.checkIn)}</td>
@@ -205,6 +219,8 @@ function AttendancePanel({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { user } = useAuth();
+  const isAdmin = user?.roles.includes('admin') ?? false;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeeId, setEmployeeId] = useState(record?.employeeId ?? defaultEmployeeId ?? '');
   const [attendanceDate, setAttendanceDate] = useState(
@@ -263,11 +279,13 @@ function AttendancePanel({
             required
           >
             <option value="">Select employee</option>
-            {employees.map((employee) => (
-              <option key={employee.id} value={employee.id}>
-                {employee.fullName}
-              </option>
-            ))}
+            {employees
+              .filter((employee) => isAdmin || employee.id !== user?.employeeId)
+              .map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.fullName}
+                </option>
+              ))}
           </select>
 
           <label>Date *</label>

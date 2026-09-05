@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const usersService = require('../services/users.service');
+const userCache = require('../services/userCache');
 
 async function requireAuth(request, response, next) {
   const header = request.headers.authorization || '';
@@ -21,7 +22,12 @@ async function requireAuth(request, response, next) {
   // moment an admin edits them. Authorization therefore uses the roles as
   // they are in the database right now, so a demotion or deactivation takes
   // effect immediately instead of lingering until the token expires.
-  const user = await usersService.findById(payload.sub);
+  let user = userCache.get(payload.sub);
+  if (!user) {
+    user = await usersService.findById(payload.sub);
+    if (user) userCache.set(payload.sub, user);
+  }
+
   if (!user || !user.isActive) {
     return response.status(401).json({ message: 'Account is inactive or no longer exists' });
   }

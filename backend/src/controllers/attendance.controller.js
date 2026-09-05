@@ -14,6 +14,19 @@ const attendanceSchema = z.object({
 
 const updateAttendanceSchema = attendanceSchema.partial();
 
+// Nobody records or corrects their own hours - that is the admin's job.
+// HR staff can punch anyone else in or out, but their own row has to be
+// handled by someone above them, so worked hours cannot be self-serving.
+function isOwnRecord(request, employeeId) {
+  return Boolean(employeeId) && employeeId === request.user.employeeId;
+}
+
+function refuseSelfEdit(response) {
+  response.status(403).json({
+    message: 'You cannot record or correct your own attendance. An admin must do this for you.',
+  });
+}
+
 function handleConstraintError(error, response) {
   // One attendance record per employee per day.
   if (error.code === '23505') {
@@ -46,6 +59,11 @@ async function create(request, response) {
     return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
   }
 
+  const isAdmin = request.user.roles.includes('admin');
+  if (!isAdmin && isOwnRecord(request, parsed.data.employeeId)) {
+    return refuseSelfEdit(response);
+  }
+
   try {
     response.status(201).json(await attendanceService.create(parsed.data));
   } catch (error) {
@@ -57,6 +75,16 @@ async function update(request, response) {
   const parsed = updateAttendanceSchema.safeParse(request.body);
   if (!parsed.success) {
     return response.status(400).json({ message: 'Invalid input', issues: parsed.error.issues });
+  }
+
+  const existing = await attendanceService.findById(request.params.id);
+  if (!existing) return response.status(404).json({ message: 'Attendance record not found' });
+
+  // Checked against the row being edited and the row it would be moved to,
+  // so an edit cannot be re-pointed at yourself either.
+  const isAdmin = request.user.roles.includes('admin');
+  if (!isAdmin && (isOwnRecord(request, existing.employeeId) || isOwnRecord(request, parsed.data.employeeId))) {
+    return refuseSelfEdit(response);
   }
 
   try {
