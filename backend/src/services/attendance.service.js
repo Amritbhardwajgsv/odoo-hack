@@ -169,7 +169,12 @@ async function todayForEmployee(employeeId) {
 // from an earlier session that day are never lost to a later one.
 async function checkInSelf(employeeId) {
   const existing = await todayForEmployee(employeeId);
-  if (existing && !existing.checkOut) return { error: 'already_checked_in', attendance: existing };
+  // A row existing isn't the same as a session being active - an admin can
+  // create a placeholder row (present/notes only, no punch times) without
+  // ever setting check_in, and that must not block a real self-check-in.
+  if (existing && existing.checkIn && !existing.checkOut) {
+    return { error: 'already_checked_in', attendance: existing };
+  }
 
   if (existing) {
     await pool.query(
