@@ -1,14 +1,15 @@
 const { Router } = require('express');
 
 const controller = require('../controllers/me.controller');
+const { attendancePunchLimiter } = require('../middleware/rateLimit');
 
 const router = Router();
 router.get('/profile', controller.profile);
 router.patch('/profile', controller.updateProfile);
 router.get('/attendance', controller.attendance);
 router.get('/attendance/today', controller.attendanceToday);
-router.post('/attendance/check-in', controller.checkIn);
-router.post('/attendance/check-out', controller.checkOut);
+router.post('/attendance/check-in', attendancePunchLimiter, controller.checkIn);
+router.post('/attendance/check-out', attendancePunchLimiter, controller.checkOut);
 router.get('/time-off/types', controller.timeOffTypeOptions);
 router.get('/time-off', controller.timeOffRequests);
 router.post('/time-off', controller.createTimeOffRequest);

@@ -18,12 +18,20 @@ function elapsedLabel(from: string, to: number) {
   return `${hours}h${String(rest).padStart(2, '0')}`;
 }
 
+// A short client-side cooldown after every punch, success or failure. The
+// server enforces the real limit (5/minute, see rateLimit.js); this is just
+// the first line of defence so an ordinary accidental double-click never
+// even reaches it - which is exactly how a "checked in and out inside the
+// same minute" record gets created in the first place.
+const COOLDOWN_SECONDS = 5;
+
 export default function AttendanceWidget() {
   const { user } = useAuth();
   const [today, setToday] = useState<Attendance | null | undefined>(undefined);
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
 
   useEffect(() => {
     api
@@ -33,12 +41,18 @@ export default function AttendanceWidget() {
   }, []);
 
   // Only ticks while a session is actually running - a finished or
-  // not-yet-started day has nothing that needs a live clock.
+  // not-yet-started day has nothing that needs a live clock. Also drives
+  // the cooldown countdown below, so one timer covers both.
   useEffect(() => {
-    if (!today || today.checkOut) return;
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    const active = today && !today.checkOut;
+    const cooling = cooldownUntil > Date.now();
+    if (!active && !cooling) return;
+    const timer = setInterval(() => setNow(Date.now()), active ? 30_000 : 1_000);
     return () => clearInterval(timer);
-  }, [today]);
+  }, [today, cooldownUntil]);
+
+  const cooldownRemaining = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+  const cooling = cooldownRemaining > 0;
 
   async function handleCheckIn() {
     setBusy(true);
@@ -49,6 +63,7 @@ export default function AttendanceWidget() {
       setError(err instanceof ApiError ? err.message : 'Could not check in');
     } finally {
       setBusy(false);
+      setCooldownUntil(Date.now() + COOLDOWN_SECONDS * 1000);
     }
   }
 
@@ -61,6 +76,7 @@ export default function AttendanceWidget() {
       setError(err instanceof ApiError ? err.message : 'Could not check out');
     } finally {
       setBusy(false);
+      setCooldownUntil(Date.now() + COOLDOWN_SECONDS * 1000);
     }
   }
 
@@ -109,18 +125,19 @@ export default function AttendanceWidget() {
       {error && <p className="attendance-widget__error">{error}</p>}
 
       {isActive ? (
-        <button className="attendance-widget__btn" disabled={busy} onClick={handleCheckOut}>
-          {busy ? '...' : 'Check Out'}
+        <button className="attendance-widget__btn" disabled={busy || cooling} onClick={handleCheckOut}>
+          {busy ? '...' : cooling ? `Wait ${cooldownRemaining}s` : 'Check Out'}
         </button>
       ) : (
-        <button className="attendance-widget__btn" disabled={busy} onClick={handleCheckIn}>
-          {busy ? '...' : 'Check In'}
+        <button className="attendance-widget__btn" disabled={busy || cooling} onClick={handleCheckIn}>
+          {busy ? '...' : cooling ? `Wait ${cooldownRemaining}s` : 'Check In'}
         </button>
       )}
 
       <p className="attendance-widget__caption">
-        Work your attendance from this quick widget and review your full history from My
-        Attendance.
+        {cooling
+          ? "Please don't spam check-in/out - a short pause between punches keeps your record clean."
+          : 'Work your attendance from this quick widget and review your full history from My Attendance.'}
       </p>
     </div>
   );
