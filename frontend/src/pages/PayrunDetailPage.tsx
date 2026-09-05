@@ -80,10 +80,10 @@ export default function PayrunDetailPage() {
   function sendPayslips() {
     run(async () => {
       const result = await api.post<SendPayslipsResult>(`/api/payruns/${id}/send-payslips`, {});
-      const sent = `Sent ${result.sent.length} payslip${result.sent.length === 1 ? '' : 's'}.`;
-      return result.failed.length
-        ? `${sent} Failed for ${result.failed.map((f) => `${f.employee} (${f.reason})`).join(', ')}.`
-        : sent;
+      const queued = `Queued ${result.queued} payslip${result.queued === 1 ? '' : 's'} for delivery.`;
+      return result.skipped.length
+        ? `${queued} Skipped ${result.skipped.map((s) => `${s.employee} (${s.reason})`).join(', ')}.`
+        : queued;
     });
   }
 

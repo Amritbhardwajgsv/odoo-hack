@@ -409,8 +409,12 @@ export interface EligibleEmployee {
 }
 
 export interface SendPayslipsResult {
-  sent: string[];
-  failed: { employee: string; reason: string }[];
+  message: string;
+  // Delivery runs in a background worker; the response only reports what was
+  // accepted onto the queue, not per-address success.
+  queued: number;
+  recipients: string[];
+  skipped: { employee: string; reason: string }[];
 }
 
 export type SalaryCategory =

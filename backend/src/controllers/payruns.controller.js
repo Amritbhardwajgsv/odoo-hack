@@ -197,14 +197,22 @@ async function sendPayslips(request, response) {
     summaries.map((summary) => service.findPayslipById(summary.id))
   );
 
-  const result = await mail.sendPayslips(payslips);
+  const result = await mail.queuePayslips(payslips);
   if (result.error === 'not_configured') {
     return response.status(503).json({
       message:
         'Email delivery is not configured. Set SMTP_HOST, SMTP_USER and SMTP_PASS to send payslips.',
     });
   }
-  response.json(result);
+
+  // The jobs are on the queue now; the worker process delivers them and
+  // handles its own retries, so this is a 202, not a per-address result.
+  response.status(202).json({
+    message: `${result.queued} payslip${result.queued === 1 ? '' : 's'} queued for delivery`,
+    queued: result.queued,
+    recipients: result.recipients,
+    skipped: result.skipped,
+  });
 }
 
 module.exports = {
