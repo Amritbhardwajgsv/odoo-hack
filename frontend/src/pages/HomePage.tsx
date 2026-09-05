@@ -48,12 +48,23 @@ type RoleFeature = {
   Icon: typeof UsersRound;
 };
 
-const ROLE_FEATURES: RoleFeature[] = [
-  { role: 'employee', label: 'Employee', title: 'Your day, in one view.', text: 'Attendance, leave, and payslips without back-and-forth.', items: ['Check attendance', 'Request time off'], Icon: CalendarClock },
-  { role: 'hr_manager', label: 'HR manager', title: 'People operations, clear.', text: 'Keep employee information and approvals moving.', items: ['People directory', 'Leave approvals'], Icon: UsersRound },
-  { role: 'hr_payroll_user', label: 'Payroll user', title: 'Payroll inputs, ready.', text: 'Review data and resolve exceptions before payroll closes.', items: ['Payroll inputs', 'Resolve exceptions'], Icon: ClipboardCheck },
-  { role: 'hr_payroll_manager', label: 'Payroll manager', title: 'Close with confidence.', text: 'See approvals, payroll runs, and reports in one place.', items: ['Approval queue', 'Payroll reports'], Icon: WalletCards },
-  { role: 'admin', label: 'Admin', title: 'Access stays simple.', text: 'Control users, roles, and your organisation settings.', items: ['User access', 'Role setup'], Icon: ShieldCheck },
+const ROLE_FEATURES: (RoleFeature & { emoji: string })[] = [
+  { role: 'employee', emoji: '🙋', label: 'Employee', title: 'Your day, in one view.', text: 'Attendance, leave, and payslips without back-and-forth.', items: ['Check attendance', 'Request time off'], Icon: CalendarClock },
+  { role: 'hr_manager', emoji: '🧑‍🤝‍🧑', label: 'HR manager', title: 'People operations, clear.', text: 'Keep employee information and approvals moving.', items: ['People directory', 'Leave approvals'], Icon: UsersRound },
+  { role: 'hr_payroll_user', emoji: '🧾', label: 'Payroll user', title: 'Payroll inputs, ready.', text: 'Review data and resolve exceptions before payroll closes.', items: ['Payroll inputs', 'Resolve exceptions'], Icon: ClipboardCheck },
+  { role: 'hr_payroll_manager', emoji: '💼', label: 'Payroll manager', title: 'Close with confidence.', text: 'See approvals, payroll runs, and reports in one place.', items: ['Approval queue', 'Payroll reports'], Icon: WalletCards },
+  { role: 'admin', emoji: '🛡️', label: 'Admin', title: 'Access stays simple.', text: 'Control users, roles, and your organisation settings.', items: ['User access', 'Role setup'], Icon: ShieldCheck },
+];
+
+// What the platform actually does today, for the landing page's feature
+// grid - concrete capabilities rather than abstract role-marketing copy.
+const FEATURES: { emoji: string; title: string; text: string }[] = [
+  { emoji: '⏱️', title: 'Live Attendance', text: 'Check in and out from a live widget on your workspace - no punch cards, no paperwork.' },
+  { emoji: '🌴', title: 'Time Off', text: 'Request leave, track your balance, and approve requests in one click.' },
+  { emoji: '💰', title: 'Payroll Engine', text: 'Salary rules, automatic payslips, and PDFs generated in seconds.' },
+  { emoji: '📊', title: 'Payroll Dashboard', text: 'Department costs, salary trends, and warnings - all live, nothing hardcoded.' },
+  { emoji: '🔐', title: 'Role-Based Access', text: 'Five focused workspaces behind one login, each seeing only what is theirs.' },
+  { emoji: '📧', title: 'Payslip Delivery', text: 'Validated payslips emailed straight from the payrun, queued and reliable.' },
 ];
 
 const ROLE_PRIORITY: Role[] = ['admin', 'hr_payroll_manager', 'hr_manager', 'hr_payroll_user', 'employee'];
@@ -232,8 +243,9 @@ export default function HomePage() {
       </header>
 
       <section className="flow-hero">
+        <div className="flow-glow" aria-hidden="true" />
         <div>
-          <p className="flow-kicker"><Sparkles size={14} /> HR and payroll, without the clutter</p>
+          <p className="flow-kicker">✨ HR and payroll, without the clutter</p>
           <h1>Work flows better when everyone sees the right next step.</h1>
           <p className="flow-hero__copy">PeoplePay360 gives every person a focused workspace. Employees get their essentials; HR, payroll, and admin teams get the controls they need.</p>
           <div className="flow-hero__buttons">
@@ -242,10 +254,26 @@ export default function HomePage() {
           </div>
         </div>
         <aside className="flow-overview">
-          <div className="flow-overview__top"><span>Today</span><span className="flow-live"><i /> All systems clear</span></div>
+          <div className="flow-overview__top"><span>Today</span><span className="flow-live">🟢 All systems clear</span></div>
           <h2>One platform.<br />Five focused workspaces.</h2>
           <div className="flow-stat-row"><div><b>5</b><span>role views</span></div><div><b>1</b><span>clear flow</span></div></div>
         </aside>
+      </section>
+
+      <section id="features" className="flow-features">
+        <div className="section-heading">
+          <p className="flow-kicker">🚀 What's actually inside</p>
+          <h2>Real HR &amp; payroll,<br />not a mockup.</h2>
+        </div>
+        <div className="feature-grid">
+          {FEATURES.map((feature) => (
+            <article className="feature-card" key={feature.title}>
+              <span className="feature-card__emoji">{feature.emoji}</span>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="workspaces" className="flow-workspaces">
@@ -259,7 +287,7 @@ export default function HomePage() {
             return (
               <article className={'role-card role-card--' + feature.role} key={feature.role}>
                 <div className="role-card__icon"><Icon size={22} /></div>
-                <span>0{index + 1} / {feature.label}</span>
+                <span>{feature.emoji} 0{index + 1} / {feature.label}</span>
                 <h3>{feature.title}</h3>
                 <p>{feature.text}</p>
                 <div className="role-card__links">
@@ -272,16 +300,16 @@ export default function HomePage() {
       </section>
 
       <section id="why" className="flow-why">
-        <div><p className="flow-kicker">Why this flow works</p><h2>Less switching. More getting things done.</h2></div>
+        <div><p className="flow-kicker">💡 Why this flow works</p><h2>Less switching. More getting things done.</h2></div>
         <div className="flow-why__points">
-          <p><b>01</b> One identity follows you across the tools you are allowed to use.</p>
-          <p><b>02</b> Each workspace starts with the actions that matter for that role.</p>
-          <p><b>03</b> Teams stay aligned without seeing unnecessary complexity.</p>
+          <p><b>🔑</b> One identity follows you across the tools you are allowed to use.</p>
+          <p><b>🎯</b> Each workspace starts with the actions that matter for that role.</p>
+          <p><b>🧭</b> Teams stay aligned without seeing unnecessary complexity.</p>
         </div>
       </section>
 
       <footer className="flow-footer">
-        <span>PeoplePay360</span>
+        <span>👋 PeoplePay360</span>
         <Link to="/login">Sign in to your workspace <ArrowUpRight size={15} /></Link>
       </footer>
     </main>
