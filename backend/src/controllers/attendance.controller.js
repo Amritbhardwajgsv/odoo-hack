@@ -28,7 +28,10 @@ function refuseSelfEdit(response) {
 }
 
 function handleConstraintError(error, response) {
-  // One attendance record per employee per day.
+  // 23505 (one attendance record per employee per day) no longer reaches
+  // here for create() - it upserts through the conflict instead - but
+  // update() can still in principle collide if a date is moved onto a day
+  // that already has a row, so the message stays for that path.
   if (error.code === '23505') {
     response
       .status(409)
@@ -65,7 +68,7 @@ async function create(request, response) {
   }
 
   try {
-    response.status(201).json(await attendanceService.create(parsed.data));
+    response.status(201).json(await attendanceService.create(parsed.data, request.user.sub));
   } catch (error) {
     if (!handleConstraintError(error, response)) throw error;
   }

@@ -120,6 +120,7 @@ function NewStructurePanel({
 }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -131,6 +132,7 @@ function NewStructurePanel({
       const created = await api.post<SalaryStructure>('/api/salary-structures', {
         name,
         description: description || null,
+        isActive,
       });
       onCreated(created.id);
     } catch (err) {
@@ -161,6 +163,12 @@ function NewStructurePanel({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Standard monthly salary structure"
           />
+
+          <label>Active</label>
+          <select value={isActive ? 'true' : 'false'} onChange={(e) => setIsActive(e.target.value === 'true')}>
+            <option value="true">True</option>
+            <option value="false">False</option>
+          </select>
 
           {error && <p className="panel__error">{error}</p>}
 

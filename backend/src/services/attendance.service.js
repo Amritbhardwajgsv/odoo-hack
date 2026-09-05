@@ -78,12 +78,27 @@ async function findById(id) {
   return rows[0] ? mapAttendance(rows[0]) : null;
 }
 
-async function create(data) {
+// "New Attendance" for an employee/date that already has a row (most often
+// their own self-check-in from the workspace widget) is not a duplicate to
+// reject - it is exactly what an admin correcting that day's punches looks
+// like, so it upserts into the existing row instead of 409-ing. A genuinely
+// fresh row stays untouched by the "correction" flag; overwriting one that
+// already existed is marked as one, same as an explicit edit would be.
+async function create(data, correctedByUserId) {
   const checkIn = toTimestamp(data.checkIn);
   const checkOut = toTimestamp(data.checkOut);
   const { rows } = await pool.query(
     `INSERT INTO attendance (employee_id, attendance_date, check_in, check_out, worked_hours, status, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (employee_id, attendance_date) DO UPDATE
+        SET check_in = EXCLUDED.check_in,
+            check_out = EXCLUDED.check_out,
+            worked_hours = EXCLUDED.worked_hours,
+            status = EXCLUDED.status,
+            notes = EXCLUDED.notes,
+            is_manual_correction = true,
+            corrected_by = $8
+      RETURNING id`,
     [
       data.employeeId,
       data.attendanceDate,
@@ -92,6 +107,7 @@ async function create(data) {
       workedHoursFrom(checkIn, checkOut),
       data.status,
       data.notes || null,
+      correctedByUserId || null,
     ]
   );
   return findById(rows[0].id);

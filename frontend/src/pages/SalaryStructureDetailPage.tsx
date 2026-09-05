@@ -138,22 +138,23 @@ export default function SalaryStructureDetailPage() {
             )}
           </div>
 
+          <label className="field field--wide" style={{ marginBottom: 18 }}>
+            <span>Description</span>
+            <input
+              type="text"
+              value={editing ? form.description : form.description || '—'}
+              disabled={!editing}
+              placeholder="Standard monthly salary structure"
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </label>
+
           {editing && (
-            <>
-              <label className="field field--wide" style={{ marginBottom: 18 }}>
-                <span>Description</span>
-                <input
-                  type="text"
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </label>
-              <div className="panel__actions" style={{ marginBottom: 10 }}>
-                <button type="submit" className="btn btn--primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Structure'}
-                </button>
-              </div>
-            </>
+            <div className="panel__actions" style={{ marginBottom: 10 }}>
+              <button type="submit" className="btn btn--primary" disabled={saving}>
+                {saving ? 'Saving...' : 'Save Structure'}
+              </button>
+            </div>
           )}
 
           <h2 className="section-heading">Salary Rules</h2>
