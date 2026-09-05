@@ -1,8 +1,13 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const pool = require('./pool');
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
+
+function checksum(content) {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
 
 async function ensureMigrationsTable(client) {
   await client.query(`
@@ -10,6 +15,9 @@ async function ensureMigrationsTable(client) {
       name TEXT PRIMARY KEY,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
+  `);
+  await client.query(`
+    ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum TEXT
   `);
 }
 
@@ -21,8 +29,38 @@ function listMigrations() {
 }
 
 async function getAppliedMigrations(client) {
-  const { rows } = await client.query('SELECT name FROM schema_migrations');
-  return new Set(rows.map((row) => row.name));
+  const { rows } = await client.query('SELECT name, checksum FROM schema_migrations');
+  return new Map(rows.map((row) => [row.name, row.checksum]));
+}
+
+// Already-applied migrations are frozen: once a file has run against the
+// database, editing its content afterward would silently do nothing (the
+// tracker only checks the filename), so drift here means someone edited a
+// migration that already ran instead of adding a new one.
+async function checkForDriftedMigrations(client, applied) {
+  for (const name of listMigrations()) {
+    const storedChecksum = applied.get(name);
+    if (storedChecksum === undefined) continue;
+
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
+    const currentChecksum = checksum(sql);
+
+    if (storedChecksum === null) {
+      // Applied before checksum tracking existed - adopt current content as the baseline.
+      await client.query('UPDATE schema_migrations SET checksum = $1 WHERE name = $2', [
+        currentChecksum,
+        name,
+      ]);
+      continue;
+    }
+
+    if (storedChecksum !== currentChecksum) {
+      throw new Error(
+        `Migration "${name}" was already applied but its file content has changed since then. ` +
+          'Applied migrations are frozen - put your change in a new migration file instead of editing this one.'
+      );
+    }
+  }
 }
 
 async function migrateUp() {
@@ -30,6 +68,7 @@ async function migrateUp() {
   try {
     await ensureMigrationsTable(client);
     const applied = await getAppliedMigrations(client);
+    await checkForDriftedMigrations(client, applied);
     const pending = listMigrations().filter((name) => !applied.has(name));
 
     if (pending.length === 0) {
@@ -42,7 +81,10 @@ async function migrateUp() {
       await client.query('BEGIN');
       try {
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [name]);
+        await client.query('INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)', [
+          name,
+          checksum(sql),
+        ]);
         await client.query('COMMIT');
         console.log(`Applied ${name}`);
       } catch (error) {
