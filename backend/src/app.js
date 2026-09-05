@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 
 const requestLogger = require('./middleware/requestLogger');
 const notFound = require('./middleware/notFound');
@@ -11,6 +12,11 @@ const employeesRouter = require('./routes/employees.routes');
 
 const app = express();
 
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim());
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use(requestLogger);
 app.use('/api/health', healthRouter);
