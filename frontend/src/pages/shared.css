@@ -143,14 +143,14 @@
 }
 
 .status-pill--active {
-  background: #e4f7ec;
+  background: #10281b;
   color: var(--color-success);
 }
 
 .panel-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(36, 27, 51, 0.35);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: flex-end;
   z-index: 10;

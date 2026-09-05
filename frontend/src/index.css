@@ -1,6 +1,7 @@
 @import './theme.css';
 
 :root {
-  color-scheme: light;
+  /* dark so native selects, date pickers and scrollbars render dark too */
+  color-scheme: dark;
   line-height: 1.5;
 }
