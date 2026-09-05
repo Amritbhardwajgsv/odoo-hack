@@ -1,7 +1,7 @@
 .users-page {
   min-height: 100vh;
-  background: #0f0f10;
-  color: #e6e6e6;
+  background: var(--color-bg);
+  color: var(--color-text);
   padding: 32px 40px;
   box-sizing: border-box;
 }
@@ -16,7 +16,10 @@
 .users-page__header h1 {
   display: inline-block;
   margin: 0 12px 0 0;
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 32px;
+  color: var(--color-primary);
 }
 
 .users-page__header-actions {
@@ -26,14 +29,14 @@
 }
 
 .signed-in-as {
-  color: #9a9aa2;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
 .badge {
-  background: #1c1d21;
-  border: 1px solid #2a2b30;
-  color: #9a9aa2;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-border);
+  color: var(--color-primary-dark);
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 999px;
@@ -49,23 +52,23 @@
 .search-input {
   flex: 1;
   padding: 9px 12px;
-  background: #1c1d21;
-  border: 1px solid #2a2b30;
-  border-radius: 6px;
-  color: #f2f2f2;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
 }
 
 .users-page__toolbar select {
   padding: 9px 12px;
-  background: #1c1d21;
-  border: 1px solid #2a2b30;
-  border-radius: 6px;
-  color: #f2f2f2;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
 }
 
 .btn {
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 9px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -73,41 +76,46 @@
 }
 
 .btn--primary {
-  background: #4f7dfa;
+  background: var(--color-primary);
   color: white;
+}
+
+.btn--primary:hover {
+  background: var(--color-primary-dark);
 }
 
 .btn--ghost {
   background: transparent;
-  border: 1px solid #2a2b30;
-  color: #d0d0d6;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .error-banner {
-  color: #f87171;
+  color: var(--color-danger);
   margin-bottom: 12px;
 }
 
 .users-table {
   width: 100%;
   border-collapse: collapse;
-  background: #16171a;
-  border: 1px solid #2a2b30;
-  border-radius: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .users-table th {
   text-align: left;
   font-size: 12px;
-  color: #9a9aa2;
+  color: var(--color-text-muted);
   padding: 12px 16px;
-  border-bottom: 1px solid #2a2b30;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .users-table td {
   padding: 12px 16px;
-  border-bottom: 1px solid #202127;
+  border-bottom: 1px solid var(--color-border);
   font-size: 13px;
 }
 
@@ -116,12 +124,12 @@
 }
 
 .users-table tbody tr:hover {
-  background: #1c1d21;
+  background: var(--color-surface-alt);
 }
 
 .empty-row {
   text-align: center;
-  color: #6a6a72;
+  color: var(--color-text-muted);
   cursor: default !important;
 }
 
@@ -130,19 +138,19 @@
   padding: 2px 10px;
   border-radius: 999px;
   font-size: 12px;
-  background: #2a2b30;
-  color: #b5b5bd;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
 }
 
 .status-pill--active {
-  background: #16351f;
-  color: #4ade80;
+  background: #e4f7ec;
+  color: var(--color-success);
 }
 
 .panel-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(36, 27, 51, 0.35);
   display: flex;
   justify-content: flex-end;
   z-index: 10;
@@ -151,8 +159,8 @@
 .panel {
   width: 380px;
   height: 100%;
-  background: #16171a;
-  border-left: 1px solid #2a2b30;
+  background: var(--color-bg);
+  border-left: 1px solid var(--color-border);
   padding: 24px;
   box-sizing: border-box;
   overflow-y: auto;
@@ -160,14 +168,17 @@
 
 .panel h2 {
   margin: 0 0 20px;
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--color-primary);
 }
 
 .panel label {
   display: block;
   margin-bottom: 6px;
   font-size: 12px;
-  color: #b5b5bd;
+  color: var(--color-text-muted);
 }
 
 .panel input[type='email'],
@@ -177,10 +188,10 @@
   box-sizing: border-box;
   padding: 9px 12px;
   margin-bottom: 16px;
-  background: #1c1d21;
-  border: 1px solid #2a2b30;
-  border-radius: 6px;
-  color: #f2f2f2;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
 }
 
 .panel input:disabled,
@@ -197,7 +208,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #e6e6e6;
+  color: var(--color-text);
   margin-bottom: 8px;
 }
 
@@ -209,7 +220,7 @@
 .panel__hint {
   margin: 0 0 16px;
   font-size: 12px;
-  color: #f0b429;
+  color: #b45309;
 }
 
 .account-status {
@@ -217,7 +228,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #e6e6e6;
+  color: var(--color-text);
   margin: 8px 0 20px;
 }
 
@@ -226,7 +237,7 @@
 }
 
 .panel__error {
-  color: #f87171;
+  color: var(--color-danger);
   font-size: 13px;
   margin-bottom: 12px;
 }
