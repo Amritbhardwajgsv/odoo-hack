@@ -3,12 +3,15 @@ import { useAuth } from '../context/AuthContext';
 import './AppHeader.css';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'];
+// Payroll is narrower: a plain HR Manager never sees wages or payslips.
+const PAYROLL_STAFF = ['admin', 'hr_payroll_manager', 'hr_payroll_user'];
 
 export default function AppHeader() {
   const { user, logout } = useAuth();
   if (!user) return null;
 
   const isHrStaff = user.roles.some((role) => HR_STAFF.includes(role));
+  const isPayrollStaff = user.roles.some((role) => PAYROLL_STAFF.includes(role));
   const isAdmin = user.roles.includes('admin');
 
   return (
@@ -23,6 +26,7 @@ export default function AppHeader() {
         {isHrStaff && <NavLink to="/time-off" className={({ isActive }) => (isActive ? 'active' : '')}>Time Off</NavLink>}
         {isHrStaff && <NavLink to="/allocations" className={({ isActive }) => (isActive ? 'active' : '')}>Allocations</NavLink>}
         {isHrStaff && <NavLink to="/time-off-types" className={({ isActive }) => (isActive ? 'active' : '')}>Leave Types</NavLink>}
+        {isPayrollStaff && <NavLink to="/payruns" className={({ isActive }) => (isActive ? 'active' : '')}>Payroll</NavLink>}
         {isAdmin && <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>Access</NavLink>}
       </nav>
       <div className="app-header__actions">

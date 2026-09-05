@@ -4,6 +4,10 @@ const ROLES = ['employee', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'
 // HR master data (employees, contracts, schedules, attendance, time off).
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'];
 
+// Payroll is deliberately narrower than HR_STAFF: a plain HR Manager can run
+// the people side but has no business seeing wages or payslips.
+const PAYROLL_STAFF = ['admin', 'hr_payroll_manager', 'hr_payroll_user'];
+
 const DEPARTMENTS = [
   'engineering',
   'sales',
@@ -32,6 +36,7 @@ const ROLE_PRIORITY = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_man
 module.exports = {
   ROLES,
   HR_STAFF,
+  PAYROLL_STAFF,
   DEPARTMENTS,
   EMPLOYEE_STATUSES,
   CONTRACT_STATUSES,

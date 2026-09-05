@@ -17,8 +17,15 @@ import AllocationsPage from './pages/AllocationsPage';
 import AllocationDetailPage from './pages/AllocationDetailPage';
 import TimeOffTypesPage from './pages/TimeOffTypesPage';
 import TimeOffTypeDetailPage from './pages/TimeOffTypeDetailPage';
+import PayrunsPage from './pages/PayrunsPage';
+import PayrunDetailPage from './pages/PayrunDetailPage';
+import PayslipDetailPage from './pages/PayslipDetailPage';
 
 const HR_STAFF = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'] as const;
+
+// Payroll is narrower than HR_STAFF: a plain HR Manager runs the people side
+// but has no business seeing wages or payslips.
+const PAYROLL_STAFF = ['admin', 'hr_payroll_manager', 'hr_payroll_user'] as const;
 
 function App() {
   return (
@@ -128,6 +135,30 @@ function App() {
             element={
               <ProtectedRoute roles={[...HR_STAFF]}>
                 <TimeOffTypeDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payruns"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <PayrunsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payruns/:id"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <PayrunDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payslips/:id"
+            element={
+              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
+                <PayslipDetailPage />
               </ProtectedRoute>
             }
           />

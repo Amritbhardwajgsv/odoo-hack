@@ -270,6 +270,107 @@ export interface TimeOffAllocation {
   description: string | null;
 }
 
+export type PayrunStatus = 'draft' | 'computed' | 'validated' | 'paid';
+
+export const PAYRUN_STATUS_LABELS: Record<PayrunStatus, string> = {
+  draft: 'Draft',
+  computed: 'Computed',
+  validated: 'Validated',
+  paid: 'Paid',
+};
+
+export interface Payrun {
+  id: string;
+  name: string;
+  salaryStructureId: string;
+  salaryStructureName: string | null;
+  department: Department | null;
+  periodStart: string;
+  periodEnd: string;
+  status: PayrunStatus;
+  employeeCount: number;
+  payslipCount: number;
+  warningCount: number;
+  blockingCount: number;
+  // People on the payrun who produced no payslip, almost always a missing
+  // contract. Always 0 while the payrun is still a draft.
+  uncomputedCount: number;
+  grossTotal: number;
+  netTotal: number;
+  createdByName: string | null;
+  computedAt: string | null;
+  validatedAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export type PayslipStatus = 'draft' | 'computed' | 'validated' | 'paid';
+
+export interface Payslip {
+  id: string;
+  payrunId: string;
+  payrunName: string;
+  employeeId: string;
+  employeeName: string;
+  department: Department;
+  jobTitle: string | null;
+  contractId: string;
+  contractNumber: string | null;
+  wage: number | null;
+  periodStart: string;
+  periodEnd: string;
+  workedDays: number | null;
+  grossAmount: number | null;
+  netAmount: number | null;
+  status: PayslipStatus;
+  warningCount: number;
+  blockingCount: number;
+  computedAt: string | null;
+  paidAt: string | null;
+}
+
+export type SalaryCategory =
+  | 'basic'
+  | 'allowance'
+  | 'deduction'
+  | 'contribution'
+  | 'gross'
+  | 'net';
+
+export const SALARY_CATEGORY_LABELS: Record<SalaryCategory, string> = {
+  basic: 'Basic',
+  allowance: 'Allowance',
+  deduction: 'Deduction',
+  contribution: 'Contribution',
+  gross: 'Gross',
+  net: 'Net',
+};
+
+export interface PayslipLine {
+  id: string;
+  ruleName: string;
+  category: SalaryCategory;
+  sequence: number;
+  amount: number;
+}
+
+export interface PayslipWarning {
+  id: string;
+  severity: 'blocking' | 'advisory';
+  message: string;
+  isResolved: boolean;
+}
+
+export interface PayslipDetail extends Payslip {
+  lines: PayslipLine[];
+  warnings: PayslipWarning[];
+}
+
+export interface PayrunPayslips {
+  payslips: Payslip[];
+  uncomputed: { id: string; fullName: string; department: Department }[];
+}
+
 export const DAY_NAMES = [
   'Monday',
   'Tuesday',

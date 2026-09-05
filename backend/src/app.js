@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
-const { HR_STAFF } = require('./constants');
+const { HR_STAFF, PAYROLL_STAFF } = require('./constants');
 const requestLogger = require('./middleware/requestLogger');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
@@ -18,6 +18,7 @@ const {
   typesRouter: timeOffTypesRouter,
   allocationsRouter: timeOffAllocationsRouter,
 } = require('./routes/timeOff.routes');
+const { payrunsRouter, payslipsRouter } = require('./routes/payruns.routes');
 const {
   jobPositionsRouter,
   salaryStructuresRouter,
@@ -45,6 +46,8 @@ app.use('/api/time-off/types', requireAuth, requireRole(...HR_STAFF), timeOffTyp
 app.use('/api/time-off/allocations', requireAuth, requireRole(...HR_STAFF), timeOffAllocationsRouter);
 app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPositionsRouter);
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
+app.use('/api/payruns', requireAuth, requireRole(...PAYROLL_STAFF), payrunsRouter);
+app.use('/api/payslips', requireAuth, requireRole(...PAYROLL_STAFF), payslipsRouter);
 app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);
 app.use('/api/overview', requireAuth, requireRole(...HR_STAFF), overviewRouter);
 
