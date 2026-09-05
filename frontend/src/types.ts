@@ -206,6 +206,61 @@ export interface JobPosition {
   department: Department;
 }
 
+export type TimeOffStatus = 'draft' | 'submitted' | 'approved' | 'refused';
+
+export const TIME_OFF_STATUS_LABELS: Record<TimeOffStatus, string> = {
+  draft: 'Draft',
+  submitted: 'To Approve',
+  approved: 'Approved',
+  refused: 'Refused',
+};
+
+export interface TimeOffType {
+  id: string;
+  name: string;
+  unit: 'days' | 'hours';
+  requiresAllocation: boolean;
+  requiresApproval: boolean;
+  affectsPayroll: boolean;
+}
+
+export interface TimeOffRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  timeOffTypeId: string;
+  typeName: string;
+  typeUnit: 'days' | 'hours';
+  requiresAllocation: boolean;
+  requiresApproval: boolean;
+  dateFrom: string;
+  dateTo: string;
+  duration: number;
+  status: TimeOffStatus;
+  reason: string | null;
+  approverName: string | null;
+  approvedAt: string | null;
+  allocationId: string | null;
+  allocationLabel: string | null;
+  allocationRemaining: number | null;
+  createdAt: string;
+}
+
+export interface TimeOffAllocation {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  timeOffTypeId: string;
+  typeName: string;
+  unit: 'days' | 'hours';
+  allocated: number;
+  taken: number;
+  remaining: number;
+  validFrom: string;
+  validTo: string | null;
+  status: string;
+}
+
 export const DAY_NAMES = [
   'Monday',
   'Tuesday',

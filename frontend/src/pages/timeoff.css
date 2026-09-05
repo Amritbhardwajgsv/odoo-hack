@@ -1,0 +1,101 @@
+/* Status has to read as a lifecycle: waiting, done, or rejected. */
+.leave-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.leave-status--approved {
+  color: var(--color-success);
+}
+
+.leave-status--submitted {
+  color: #fbbf24;
+}
+
+.leave-status--refused {
+  color: var(--color-danger);
+}
+
+.leave-status--draft {
+  color: var(--color-text-muted);
+}
+
+.decide {
+  display: flex;
+  gap: 8px;
+}
+
+.decide button {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.decide__approve {
+  color: var(--color-success);
+}
+
+.decide__approve:hover:not(:disabled) {
+  border-color: var(--color-success);
+}
+
+.decide__refuse {
+  color: var(--color-danger);
+}
+
+.decide__refuse:hover:not(:disabled) {
+  border-color: var(--color-danger);
+}
+
+.decide button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.decide--lg button {
+  padding: 9px 20px;
+  font-size: 13px;
+}
+
+.decide__done {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.reason-box {
+  margin-top: 26px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.reason-box h3 {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reason-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.balance-note {
+  margin: 18px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.balance-note strong {
+  color: var(--color-text);
+}

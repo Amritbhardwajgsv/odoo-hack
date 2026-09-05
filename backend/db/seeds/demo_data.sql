@@ -158,6 +158,47 @@ UPDATE contracts
  WHERE contract_number IS NOT NULL
    AND split_part(contract_number, '/', 2) <> to_char(start_date, 'YYYY');
 
+-- ---------------------------------------------------------------- time off
+INSERT INTO time_off_types (name, unit, requires_allocation, requires_approval, affects_payroll)
+SELECT v.name, v.unit::time_off_unit, v.needs_alloc, true, v.payroll
+  FROM (VALUES
+    ('Paid Time Off', 'days', true,  true),
+    ('Sick Leave',    'days', true,  true),
+    ('Comp Off',      'days', false, false)
+  ) AS v(name, unit, needs_alloc, payroll)
+ WHERE NOT EXISTS (SELECT 1 FROM time_off_types t WHERE t.name = v.name);
+
+-- A balance per employee for the allocation-backed types, valid this year.
+INSERT INTO time_off_allocations
+  (employee_id, time_off_type_id, allocated_amount, taken_amount, valid_from, valid_to, status)
+SELECT e.id, t.id, v.amount, 0, DATE '2026-01-01', DATE '2026-12-31', 'approved'
+  FROM employees e
+  CROSS JOIN (VALUES ('Paid Time Off', 18.0), ('Sick Leave', 10.0)) AS v(type_name, amount)
+  JOIN time_off_types t ON t.name = v.type_name
+ WHERE e.email LIKE '%@peoplepay360.com'
+   AND NOT EXISTS (
+     SELECT 1 FROM time_off_allocations a
+      WHERE a.employee_id = e.id AND a.time_off_type_id = t.id
+   );
+
+-- Requests across the lifecycle: one waiting on a decision, one already
+-- taken, one that needs no balance at all.
+INSERT INTO time_off_requests
+  (employee_id, time_off_type_id, date_from, date_to, duration, status, reason)
+SELECT e.id, t.id, v.date_from, v.date_to,
+       (v.date_to - v.date_from) + 1, v.status::time_off_request_status, v.reason
+  FROM (VALUES
+    ('arjun@peoplepay360.com',  'Paid Time Off', DATE '2026-09-12', DATE '2026-09-14', 'submitted', 'Family vacation'),
+    ('vikram@peoplepay360.com', 'Sick Leave',    DATE '2026-09-18', DATE '2026-09-18', 'submitted', 'Fever'),
+    ('karan@peoplepay360.com',  'Comp Off',      DATE '2026-09-27', DATE '2026-09-27', 'submitted', 'Worked the weekend release')
+  ) AS v(email, type_name, date_from, date_to, status, reason)
+  JOIN employees e ON e.email = v.email
+  JOIN time_off_types t ON t.name = v.type_name
+ WHERE NOT EXISTS (
+   SELECT 1 FROM time_off_requests r
+    WHERE r.employee_id = e.id AND r.date_from = v.date_from
+ );
+
 -- --------------------------------------------------------------- accounts
 -- Ishita Rao is deliberately left without a login, to exercise the
 -- "employee exists but cannot sign in" case.

@@ -14,6 +14,11 @@ const contractsRouter = require('./routes/contracts.routes');
 const attendanceRouter = require('./routes/attendance.routes');
 const workingSchedulesRouter = require('./routes/workingSchedules.routes');
 const {
+  requestsRouter: timeOffRequestsRouter,
+  typesRouter: timeOffTypesRouter,
+  allocationsRouter: timeOffAllocationsRouter,
+} = require('./routes/timeOff.routes');
+const {
   jobPositionsRouter,
   salaryStructuresRouter,
   overviewRouter,
@@ -35,6 +40,9 @@ app.use('/api/users', requireAuth, requireRole('admin'), usersRouter);
 app.use('/api/employees', requireAuth, requireRole(...HR_STAFF), employeesRouter);
 app.use('/api/contracts', requireAuth, requireRole(...HR_STAFF), contractsRouter);
 app.use('/api/attendance', requireAuth, requireRole(...HR_STAFF), attendanceRouter);
+app.use('/api/time-off/requests', requireAuth, requireRole(...HR_STAFF), timeOffRequestsRouter);
+app.use('/api/time-off/types', requireAuth, requireRole(...HR_STAFF), timeOffTypesRouter);
+app.use('/api/time-off/allocations', requireAuth, requireRole(...HR_STAFF), timeOffAllocationsRouter);
 app.use('/api/job-positions', requireAuth, requireRole(...HR_STAFF), jobPositionsRouter);
 app.use('/api/working-schedules', requireAuth, requireRole(...HR_STAFF), workingSchedulesRouter);
 app.use('/api/salary-structures', requireAuth, requireRole(...HR_STAFF), salaryStructuresRouter);

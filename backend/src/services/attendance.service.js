@@ -39,6 +39,7 @@ function toTimestamp(value) {
 // Worked hours are always derived from the punches themselves rather than
 // trusted from the client, so a corrected check-in/out can't drift from the total.
 function workedHoursFrom(checkIn, checkOut) {
+  console.log("method triggered");
   if (!checkIn || !checkOut) return 0;
   const hours = (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 3_600_000;
   return hours > 0 ? Math.round(hours * 100) / 100 : 0;
