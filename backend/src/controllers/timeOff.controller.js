@@ -211,6 +211,11 @@ function respondToAllocationDecision(result, response) {
   if (result.error === 'not_found') {
     return response.status(404).json({ message: 'Allocation not found' });
   }
+  if (result.error === 'wrong_approver') {
+    return response.status(403).json({
+      message: `This employee's role requires approval by ${result.label}, not a peer at the same level.`,
+    });
+  }
   if (result.error === 'already_consumed') {
     return response.status(409).json({
       message: `${result.taken} already taken from this balance, so it cannot be withdrawn`,
@@ -221,14 +226,14 @@ function respondToAllocationDecision(result, response) {
 
 async function approveAllocation(request, response) {
   respondToAllocationDecision(
-    await service.decideAllocation(request.params.id, 'approved', request.user.sub),
+    await service.decideAllocation(request.params.id, 'approved', approverFrom(request)),
     response
   );
 }
 
 async function refuseAllocation(request, response) {
   respondToAllocationDecision(
-    await service.decideAllocation(request.params.id, 'refused', request.user.sub),
+    await service.decideAllocation(request.params.id, 'refused', approverFrom(request)),
     response
   );
 }

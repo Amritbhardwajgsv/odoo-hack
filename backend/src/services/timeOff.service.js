@@ -242,6 +242,20 @@ function hierarchyFor(requesterRoles) {
   return HR_HIERARCHY.find((tier) => tier.requesterRoles.some((role) => requesterRoles.includes(role)));
 }
 
+// Shared by time off requests AND allocations - a person holding an HR-tier
+// role must have their own record (either kind) decided by the required
+// tier above them, never by a peer or themselves. Independent of whatever
+// per-request or per-type rule the caller layers on top of this.
+async function checkHierarchyAuthority(client, targetEmployeeId, approver) {
+  if (approver.roles.includes('admin')) return null;
+
+  const { rows } = await client.query('SELECT roles FROM users WHERE employee_id = $1', [targetEmployeeId]);
+  const tier = hierarchyFor(rows[0]?.roles ?? []);
+  if (!tier) return null;
+  if (tier.approverRoles.some((role) => approver.roles.includes(role))) return null;
+  return { error: 'wrong_approver', reason: 'hierarchy', label: tier.label };
+}
+
 // A type's approvalBy names who is trusted to decide it, for a requester
 // with no special HR-tier role of their own. "Manager" means the
 // requester's own direct manager (or an admin, as the standing override
@@ -249,18 +263,9 @@ function hierarchyFor(requesterRoles) {
 // keeps the existing behaviour: any HR staff, enforced already at the
 // router level, is enough.
 async function checkApprovalAuthority(client, request, type, approver) {
+  const hierarchyError = await checkHierarchyAuthority(client, request.employee_id, approver);
+  if (hierarchyError) return hierarchyError;
   if (approver.roles.includes('admin')) return null;
-
-  const { rows: requesterRows } = await client.query('SELECT roles FROM users WHERE employee_id = $1', [
-    request.employee_id,
-  ]);
-  const requesterRoles = requesterRows[0]?.roles ?? [];
-  const tier = hierarchyFor(requesterRoles);
-
-  if (tier) {
-    if (tier.approverRoles.some((role) => approver.roles.includes(role))) return null;
-    return { error: 'wrong_approver', reason: 'hierarchy', label: tier.label };
-  }
 
   if (type.approval_by !== 'Manager') return null;
 
@@ -573,13 +578,18 @@ async function updateAllocation(id, data) {
   return rows[0] ? findAllocationById(id) : null;
 }
 
-// Approving an allocation is what makes the balance usable by requests.
-async function decideAllocation(id, status, approverUserId) {
+// Approving an allocation is what makes the balance usable by requests -
+// exactly the kind of decision an HR/payroll staff member must not be able
+// to make for their own record, so the same hierarchy rule applies here.
+async function decideAllocation(id, status, approver) {
   const { rows: existing } = await pool.query(
-    'SELECT taken_amount FROM time_off_allocations WHERE id = $1',
+    'SELECT employee_id, taken_amount FROM time_off_allocations WHERE id = $1',
     [id]
   );
   if (existing.length === 0) return { error: 'not_found' };
+
+  const hierarchyError = await checkHierarchyAuthority(pool, existing[0].employee_id, approver);
+  if (hierarchyError) return hierarchyError;
 
   // Withdrawing a balance that leave has already been taken from would
   // leave approved requests pointing at days nobody granted.
@@ -591,7 +601,7 @@ async function decideAllocation(id, status, approverUserId) {
     `UPDATE time_off_allocations
         SET status = $1, approved_by = $2, approved_at = now()
       WHERE id = $3`,
-    [status, approverUserId, id]
+    [status, approver.userId, id]
   );
   return { allocation: await findAllocationById(id) };
 }
