@@ -138,8 +138,12 @@ export default function EmployeeDetailPage() {
           )}
 
           <div className="smart-buttons">
-            <span className="smart-button">Time Off {employee.counts.timeOff}</span>
-            <span className="smart-button">Contracts {employee.counts.contracts}</span>
+            <Link className="smart-button" to={`/time-off?employeeId=${employee.id}`}>
+              Time Off {employee.counts.timeOff}
+            </Link>
+            <Link className="smart-button" to={`/contracts?employeeId=${employee.id}`}>
+              Contracts {employee.counts.contracts}
+            </Link>
             <Link className="smart-button" to={`/attendance?employeeId=${employee.id}`}>
               Attendance {employee.counts.attendance}
             </Link>
