@@ -3,7 +3,7 @@
 .auth-nav a { color: #f5f3f0; text-decoration: none; }
 .auth-layout { min-height: calc(100vh - 86px); display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(390px, .85fr); gap: clamp(56px, 10vw, 170px); align-items: center; }
 .auth-intro { max-width: 700px; padding: 70px 0; }
-.auth-eyebrow { margin: 0 0 20px; color: #a78bfa; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.auth-eyebrow { margin: 0 0 20px; color: #8bacfa; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .auth-intro h1 { margin: 0; font-size: clamp(46px, 5.8vw, 86px); font-weight: 620; line-height: .96; letter-spacing: -.07em; }
 .auth-intro > p:not(.auth-eyebrow) { max-width: 525px; margin: 31px 0; color: #a5a2aa; font-size: 17px; line-height: 1.65; }
 .auth-benefits { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -13,9 +13,9 @@
 .auth-card__subtitle { margin: 13px 0 38px; color: #a5a2aa; line-height: 1.55; }
 .auth-card label { display: block; margin: 22px 0 8px; color: #c8c4cb; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .auth-card input { width: 100%; padding: 15px 0; border: 0; border-bottom: 1px solid #48434c; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 16px; }
-.auth-card input:focus { border-bottom-color: #a78bfa; }
-.auth-card button[type='submit'] { width: 100%; margin-top: 36px; padding: 16px; border: 0; border-radius: 4px; background: #7c3aed; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
-.auth-card button[type='submit']:hover { background: #8b5cf6; }
+.auth-card input:focus { border-bottom-color: #8bacfa; }
+.auth-card button[type='submit'] { width: 100%; margin-top: 36px; padding: 16px; border: 0; border-radius: 4px; background: #3a70ed; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+.auth-card button[type='submit']:hover { background: #5c8af6; }
 .auth-card button[type='submit']:disabled { opacity: .6; cursor: default; }
 .auth-card__error { margin: 18px 0 -12px; color: #ff8fae; font-size: 13px; }
 .auth-card__note { margin: 24px 0 0; color: #817b85; font-size: 12px; line-height: 1.5; }

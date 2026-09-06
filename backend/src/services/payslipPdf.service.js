@@ -5,11 +5,11 @@ const { UNPAID_LEAVE_THRESHOLD_DAYS } = require('./payruns.service');
 const ADDS_TO_EARNINGS = ['basic', 'allowance', 'gross'];
 const REDUCES_NET = ['deduction', 'contribution'];
 
-const BRAND = '#7c3aed';
-const BRAND_TINT = '#f2edfc';
+const BRAND = '#3a70ed';
+const BRAND_TINT = '#edf2fc';
 const INK = '#1a1a1a';
 const MUTED = '#6b6b6b';
-const BORDER = '#d9d3ea';
+const BORDER = '#d3daea';
 
 function money(value) {
   return `INR ${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;

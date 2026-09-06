@@ -364,12 +364,12 @@
 /* Send is the outward-facing action, so it sits apart from the lifecycle
    buttons rather than in the same row. */
 .btn--send {
-  background: #a78bfa;
+  background: #8bacfa;
   color: #17161a;
 }
 
 .btn--send:hover:not(:disabled) {
-  background: #c4b5fd;
+  background: #b5cbfd;
 }
 
 .btn:disabled {
