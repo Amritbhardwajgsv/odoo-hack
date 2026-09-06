@@ -3,9 +3,18 @@ const { z } = require('zod');
 const attendanceService = require('../services/attendance.service');
 const { ATTENDANCE_STATUSES } = require('../constants');
 
+// The server's own clock, not the client's - a manual correction with a
+// forged local clock must not be able to sneak a future date past this.
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const attendanceSchema = z.object({
   employeeId: z.string().uuid(),
-  attendanceDate: z.string().min(1),
+  attendanceDate: z
+    .string()
+    .min(1)
+    .refine((value) => value <= todayIso(), { message: 'Attendance date cannot be in the future' }),
   checkIn: z.string().nullable().optional().or(z.literal('')),
   checkOut: z.string().nullable().optional().or(z.literal('')),
   status: z.enum(ATTENDANCE_STATUSES).optional().default('present'),

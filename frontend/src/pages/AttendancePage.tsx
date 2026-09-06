@@ -263,6 +263,10 @@ function AttendancePanel({
     event.preventDefault();
     setError(null);
 
+    if (attendanceDate > todayIso()) {
+      return setError('Attendance date cannot be in the future');
+    }
+
     const rawCheckIn = checkInRef.current?.value.trim() ?? '';
     const rawCheckOut = checkOutRef.current?.value.trim() ?? '';
     const checkIn = rawCheckIn ? normalizeTime(rawCheckIn) : null;
@@ -323,6 +327,7 @@ function AttendancePanel({
           <input
             type="date"
             value={attendanceDate}
+            max={todayIso()}
             onChange={(e) => setAttendanceDate(e.target.value)}
             required
           />
