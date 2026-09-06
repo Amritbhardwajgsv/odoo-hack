@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { FileDown } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
@@ -26,6 +27,38 @@ function formatDate(value: string) {
 function formatTime(value: string | null) {
   if (!value) return '—';
   return new Date(value).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Quote a field only when it needs it, per RFC 4180 - most values here
+// (names, times) never do, but a name with a comma shouldn't split a column.
+function csvCell(value: string) {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+// Exports exactly what the table is currently showing, not a fresh
+// unfiltered fetch - the date/employee/search filters already narrowed it
+// down, and the export should match what HR is looking at on screen.
+function exportAttendanceCsv(records: Attendance[], dateFilter: string) {
+  const header = ['Employee', 'Date', 'Check In', 'Check Out', 'Worked Hours', 'Status'];
+  const rows = records.map((record) => [
+    record.employeeName,
+    formatDate(record.attendanceDate),
+    formatTime(record.checkIn),
+    formatTime(record.checkOut),
+    (record.workedHours ?? 0).toFixed(2),
+    ATTENDANCE_STATUS_LABELS[record.status],
+  ]);
+  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `attendance-${dateFilter || 'all-dates'}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function AttendancePage() {
@@ -96,6 +129,19 @@ export default function AttendancePage() {
         </header>
 
         <div className="admin-page__toolbar">
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            onClick={() => exportAttendanceCsv(records, dateFilter)}
+            disabled={records.length === 0}
+            title={
+              dateFilter
+                ? `Export ${formatDate(dateFilter)} attendance as CSV`
+                : 'Export the records shown below as CSV'
+            }
+          >
+            <FileDown size={16} /> Export CSV
+          </button>
           <button className="btn btn--primary" onClick={() => setCreating(true)}>
             NEW
           </button>
