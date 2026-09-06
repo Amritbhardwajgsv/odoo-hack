@@ -264,7 +264,7 @@ function AttendancePanel({
     setError(null);
 
     if (attendanceDate > todayIso()) {
-      return setError('Attendance date cannot be in the future');
+      return setError("You can't mark attendance for a future date");
     }
 
     const rawCheckIn = checkInRef.current?.value.trim() ?? '';

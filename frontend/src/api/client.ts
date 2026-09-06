@@ -9,6 +9,15 @@ export class ApiError extends Error {
   }
 }
 
+// A failed zod parse on the server comes back as a generic
+// { message: 'Invalid input', issues: [...] } - "Invalid input" alone tells
+// the user nothing actionable. The issues array carries the real reason
+// (e.g. "Attendance date cannot be in the future"), so surface that first.
+function messageFrom(body: { message?: string; issues?: { message?: string }[] }): string {
+  const detail = body.issues?.[0]?.message;
+  return detail || body.message || 'Request failed';
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token');
   const headers = new Headers(options.headers);
@@ -19,7 +28,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new ApiError(body.message || 'Request failed', response.status);
+    throw new ApiError(messageFrom(body), response.status);
   }
 
   return body as T;
@@ -36,7 +45,7 @@ async function blob(path: string): Promise<string> {
   const response = await fetch(`${API_URL}${path}`, { headers });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.message || 'Request failed', response.status);
+    throw new ApiError(messageFrom(body), response.status);
   }
   return URL.createObjectURL(await response.blob());
 }

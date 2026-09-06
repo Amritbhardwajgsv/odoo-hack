@@ -14,7 +14,7 @@ const attendanceSchema = z.object({
   attendanceDate: z
     .string()
     .min(1)
-    .refine((value) => value <= todayIso(), { message: 'Attendance date cannot be in the future' }),
+    .refine((value) => value <= todayIso(), { message: "You can't mark attendance for a future date" }),
   checkIn: z.string().nullable().optional().or(z.literal('')),
   checkOut: z.string().nullable().optional().or(z.literal('')),
   status: z.enum(ATTENDANCE_STATUSES).optional().default('present'),
