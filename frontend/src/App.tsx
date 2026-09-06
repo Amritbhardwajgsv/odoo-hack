@@ -213,15 +213,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Declared before /:id so "new" is never read as a rule id. */}
-          <Route
-            path="/salary-rules/new"
-            element={
-              <ProtectedRoute roles={[...PAYROLL_STAFF]}>
-                <SalaryRuleDetailPage />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/salary-rules/:id"
             element={
