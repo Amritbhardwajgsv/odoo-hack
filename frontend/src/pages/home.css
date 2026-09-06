@@ -26,6 +26,7 @@ body { background: #090909; }
 .flow-overview__top, .flow-stat-row { display: flex; justify-content: space-between; color: #a7a2aa; font-size: 12px; font-weight: 650; }
 .flow-live { color: #c8c3cc; } .flow-live i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 100%; background: #63d59a; }
 .flow-overview h2 { margin: 0; font-size: clamp(32px, 3vw, 46px); line-height: 1.02; letter-spacing: -.055em; }
+.hero-illustration { width: 100%; height: auto; margin: 18px 0 6px; }
 .flow-stat-row { padding-top: 22px; border-top: 1px solid #38333b; }
 .flow-stat-row div { display: grid; gap: 5px; } .flow-stat-row b { color: #fff; font-size: 30px; letter-spacing: -.04em; } .flow-stat-row span { text-transform: uppercase; letter-spacing: .08em; font-size: 10px; }
 /* -------------------------------------------------------------- features */
@@ -52,6 +53,7 @@ body { background: #090909; }
 .role-card h3 { margin: 12px 0 9px; font-size: 28px; font-weight: 590; line-height: 1; letter-spacing: -.045em; } .role-card p { max-width: 350px; margin: 0; color: #aaa5ad; line-height: 1.55; font-size: 14px; }
 .role-card__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; } .role-card__links a { display: inline-flex; align-items: center; gap: 4px; padding: 7px 8px; border: 1px solid #413c44; border-radius: 4px; color: #d3ced6; text-decoration: none; font-size: 11px; }
 .flow-why { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 84px 0; border-top: 1px solid #292929; }
+.network-illustration { width: 200px; height: auto; margin-top: 32px; }
 .flow-why__points { display: grid; gap: 0; } .flow-why__points p { display: grid; grid-template-columns: 48px 1fr; gap: 15px; margin: 0; padding: 18px 0; border-bottom: 1px solid #292929; color: #c3bdc6; line-height: 1.5; } .flow-why__points b { color: #7598e9; font-size: 12px; }
 .flow-footer { min-height: 88px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #292929; color: #9e9aa2; font-weight: 700; font-size: 13px; } .flow-footer a { color: #f3f1ef; }
 .app-workspace { padding: 100px 8vw; } .app-workspace__heading > p:last-child { max-width: 550px; margin: 27px 0 48px; color: #aaa5ad; font-size: 17px; line-height: 1.6; }

@@ -26,6 +26,107 @@ import { api } from '../api/client';
 import { DEPARTMENT_LABELS, ROLES, type Overview, type Role } from '../types';
 import './home.css';
 
+// Hand-drawn in place of a stock photo or a screenshot that would go stale -
+// an abstract dashboard, not a claim about real numbers, so every value here
+// is decorative geometry rather than a specific metric that could mislead.
+function HeroIllustration() {
+  const bars = [40, 65, 50, 82, 58, 70];
+  const barWidth = 28;
+  const gap = 14;
+  const startX = (380 - (bars.length * barWidth + (bars.length - 1) * gap)) / 2;
+  const baseline = 172;
+
+  return (
+    <svg className="hero-illustration" viewBox="0 0 380 220" fill="none" aria-hidden="true">
+      {[0, 1, 2, 3].map((row) => (
+        <line
+          key={row}
+          x1={20}
+          x2={360}
+          y1={baseline - row * 34}
+          y2={baseline - row * 34}
+          stroke="#292929"
+          strokeWidth={1}
+        />
+      ))}
+
+      {bars.map((height, index) => {
+        const x = startX + index * (barWidth + gap);
+        return (
+          <rect
+            key={index}
+            x={x}
+            y={baseline - height}
+            width={barWidth}
+            height={height}
+            rx={6}
+            fill={index % 2 === 0 ? '#3a70ed' : '#8bacfa'}
+            opacity={index % 2 === 0 ? 1 : 0.55}
+          />
+        );
+      })}
+
+      <path
+        d="M40,132 C90,150 130,96 175,112 C210,124 240,90 270,78"
+        stroke="#8bacfa"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.85}
+      />
+      <circle cx={270} cy={78} r={5} fill="#8bacfa" />
+
+      <circle cx={320} cy={52} r={32} stroke="#292929" strokeWidth={9} />
+      <circle
+        cx={320}
+        cy={52}
+        r={32}
+        stroke="#3a70ed"
+        strokeWidth={9}
+        strokeLinecap="round"
+        strokeDasharray="137 201"
+        transform="rotate(-90 320 52)"
+      />
+
+      <g>
+        <rect x={20} y={16} width={104} height={24} rx={12} fill="#1c2742" />
+        <circle cx={36} cy={28} r={4} fill="#63d59a" />
+        <rect x={48} y={24} width={60} height={7} rx={3.5} fill="#8bacfa" opacity={0.7} />
+      </g>
+      <g>
+        <rect x={134} y={16} width={78} height={24} rx={12} fill="#1c2742" />
+        <circle cx={150} cy={28} r={4} fill="#3a70ed" />
+        <rect x={162} y={24} width={36} height={7} rx={3.5} fill="#8bacfa" opacity={0.7} />
+      </g>
+    </svg>
+  );
+}
+
+// A small "hub and spokes" diagram for the section about everything being
+// connected - same idea as the hero graphic, drawn rather than sourced.
+function NetworkIllustration() {
+  const satellites = [
+    { cx: 34, cy: 26, r: 12, fill: '#3a70ed', opacity: 1 },
+    { cx: 166, cy: 30, r: 10, fill: '#8bacfa', opacity: 0.8 },
+    { cx: 30, cy: 128, r: 11, fill: '#8bacfa', opacity: 0.8 },
+    { cx: 164, cy: 124, r: 13, fill: '#3a70ed', opacity: 1 },
+  ];
+  const centre = { cx: 100, cy: 78, r: 22 };
+
+  return (
+    <svg className="network-illustration" viewBox="0 0 200 160" fill="none" aria-hidden="true">
+      {satellites.map((s, index) => (
+        <line key={index} x1={centre.cx} y1={centre.cy} x2={s.cx} y2={s.cy} stroke="#2a3a5c" strokeWidth={1.5} />
+      ))}
+      {satellites.map((s, index) => (
+        <circle key={index} cx={s.cx} cy={s.cy} r={s.r} fill={s.fill} opacity={s.opacity} />
+      ))}
+      <circle cx={centre.cx} cy={centre.cy} r={centre.r} fill="#1c2742" stroke="#3a70ed" strokeWidth={2} />
+      <circle cx={centre.cx} cy={centre.cy} r={6} fill="#8bacfa" />
+    </svg>
+  );
+}
+
 const HR_STAFF: Role[] = ['admin', 'hr_manager', 'hr_payroll_user', 'hr_payroll_manager'];
 
 // Quick actions only point at pages that exist and the user may open.
@@ -262,6 +363,7 @@ export default function HomePage() {
         <aside className="flow-overview">
           <div className="flow-overview__top"><span>Today</span><span className="flow-live">🟢 All systems clear</span></div>
           <h2>One platform.<br />Five focused workspaces.</h2>
+          <HeroIllustration />
           <div className="flow-stat-row"><div><b>5</b><span>role views</span></div><div><b>1</b><span>clear flow</span></div></div>
         </aside>
       </section>
@@ -311,7 +413,11 @@ export default function HomePage() {
       </section>
 
       <section id="why" className="flow-why">
-        <div><p className="flow-kicker">💡 Why this flow works</p><h2>Less switching. More getting things done.</h2></div>
+        <div>
+          <p className="flow-kicker">💡 Why this flow works</p>
+          <h2>Less switching. More getting things done.</h2>
+          <NetworkIllustration />
+        </div>
         <div className="flow-why__points">
           <p><b>🔑</b> One identity follows you across the tools you are allowed to use.</p>
           <p><b>🎯</b> Each workspace starts with the actions that matter for that role.</p>
