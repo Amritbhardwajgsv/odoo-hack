@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import {
@@ -25,6 +25,11 @@ export function durationLabel(duration: number, unit: 'days' | 'hours') {
 
 export default function TimeOffPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Set by the "Time Off" smart button on an employee, so opening this
+  // screen from a person lands on just their requests.
+  const employeeId = searchParams.get('employeeId') ?? '';
+  const [employeeName, setEmployeeName] = useState<string | null>(null);
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
   const [search, setSearch] = useState('');
   const [myTeam, setMyTeam] = useState(false);
@@ -36,17 +41,35 @@ export default function TimeOffPage() {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (myTeam) params.set('team', 'true');
+    if (employeeId) params.set('employeeId', employeeId);
     const query = params.toString();
     try {
       setRequests(await api.get<TimeOffRequest[]>(`/api/time-off/requests${query ? `?${query}` : ''}`));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to load requests');
     }
-  }, [search, myTeam]);
+  }, [search, myTeam, employeeId]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!employeeId) {
+      setEmployeeName(null);
+      return;
+    }
+    api
+      .get<Employee>(`/api/employees/${employeeId}`)
+      .then((employee) => setEmployeeName(employee.fullName))
+      .catch(() => setEmployeeName(null));
+  }, [employeeId]);
+
+  function clearEmployeeFilter() {
+    const next = new URLSearchParams(searchParams);
+    next.delete('employeeId');
+    setSearchParams(next);
+  }
 
   // Decide from the list without opening the request, then refresh so the
   // balance and status shown are the ones the server just wrote.
@@ -91,6 +114,11 @@ export default function TimeOffPage() {
           >
             My Team {myTeam ? '×' : ''}
           </button>
+          {employeeId && (
+            <button className="filter-chip filter-chip--active" onClick={clearEmployeeFilter}>
+              Employee: {employeeName ?? '...'} &times;
+            </button>
+          )}
         </div>
 
         {error && <p className="error-banner">{error}</p>}

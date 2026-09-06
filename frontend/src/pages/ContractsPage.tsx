@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import {
@@ -34,6 +34,11 @@ export function formatWage(value: number) {
 
 export default function ContractsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Set by the "Contracts" smart button on an employee, so opening this
+  // screen from a person lands on just their contracts.
+  const employeeId = searchParams.get('employeeId') ?? '';
+  const [employeeName, setEmployeeName] = useState<string | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ContractStatus | ''>('');
@@ -44,6 +49,7 @@ export default function ContractsPage() {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (statusFilter) params.set('status', statusFilter);
+    if (employeeId) params.set('employeeId', employeeId);
     const query = params.toString();
     try {
       setContracts(await api.get<Contract[]>(`/api/contracts${query ? `?${query}` : ''}`));
@@ -56,7 +62,24 @@ export default function ContractsPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter]);
+  }, [search, statusFilter, employeeId]);
+
+  useEffect(() => {
+    if (!employeeId) {
+      setEmployeeName(null);
+      return;
+    }
+    api
+      .get<Employee>(`/api/employees/${employeeId}`)
+      .then((employee) => setEmployeeName(employee.fullName))
+      .catch(() => setEmployeeName(null));
+  }, [employeeId]);
+
+  function clearEmployeeFilter() {
+    const next = new URLSearchParams(searchParams);
+    next.delete('employeeId');
+    setSearchParams(next);
+  }
 
   return (
     <div>
@@ -90,6 +113,11 @@ export default function ContractsPage() {
               </option>
             ))}
           </select>
+          {employeeId && (
+            <button className="filter-chip filter-chip--active" onClick={clearEmployeeFilter}>
+              Employee: {employeeName ?? '...'} &times;
+            </button>
+          )}
         </div>
 
         {loadError && <p className="error-banner">{loadError}</p>}
