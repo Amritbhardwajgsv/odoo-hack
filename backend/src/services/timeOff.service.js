@@ -221,13 +221,48 @@ async function updateRequest(id, { timeOffTypeId, dateFrom, dateTo, reason }) {
   return rows[0] ? findRequestById(id) : null;
 }
 
-// A type's approvalBy names who is trusted to decide it. "Manager" means
-// the requester's own direct manager (or an admin, as the standing
-// override every role check in this app allows) - anything else (Officer,
-// blank) keeps the existing behaviour: any HR staff, enforced already at
-// the router level, is enough.
+// Independent of what a type's own approvalBy says: HR/payroll staff
+// approving their own time off must escalate up the org's role hierarchy
+// rather than being decided by a peer at the same level - an HR Manager's
+// request needs HR Payroll, and HR Payroll's own request needs an admin.
+// Checked in this order (most senior first) so someone holding both an HR
+// Payroll and an HR Manager role is held to the stricter, payroll rule.
+// There is nothing above admin, so an admin's own requests are never
+// specially escalated - the universal admin bypass just below covers them.
+const HR_HIERARCHY = [
+  { requesterRoles: ['hr_payroll_manager', 'hr_payroll_user'], approverRoles: ['admin'], label: 'an admin' },
+  {
+    requesterRoles: ['hr_manager'],
+    approverRoles: ['hr_payroll_user', 'hr_payroll_manager'],
+    label: 'HR Payroll (or an admin)',
+  },
+];
+
+function hierarchyFor(requesterRoles) {
+  return HR_HIERARCHY.find((tier) => tier.requesterRoles.some((role) => requesterRoles.includes(role)));
+}
+
+// A type's approvalBy names who is trusted to decide it, for a requester
+// with no special HR-tier role of their own. "Manager" means the
+// requester's own direct manager (or an admin, as the standing override
+// every role check in this app allows) - anything else (Officer, blank)
+// keeps the existing behaviour: any HR staff, enforced already at the
+// router level, is enough.
 async function checkApprovalAuthority(client, request, type, approver) {
-  if (type.approval_by !== 'Manager' || approver.roles.includes('admin')) return null;
+  if (approver.roles.includes('admin')) return null;
+
+  const { rows: requesterRows } = await client.query('SELECT roles FROM users WHERE employee_id = $1', [
+    request.employee_id,
+  ]);
+  const requesterRoles = requesterRows[0]?.roles ?? [];
+  const tier = hierarchyFor(requesterRoles);
+
+  if (tier) {
+    if (tier.approverRoles.some((role) => approver.roles.includes(role))) return null;
+    return { error: 'wrong_approver', reason: 'hierarchy', label: tier.label };
+  }
+
+  if (type.approval_by !== 'Manager') return null;
 
   const { rows } = await client.query('SELECT manager_id FROM employees WHERE id = $1', [
     request.employee_id,
@@ -235,10 +270,7 @@ async function checkApprovalAuthority(client, request, type, approver) {
   const managerId = rows[0]?.manager_id;
   if (managerId && managerId === approver.employeeId) return null;
 
-  return {
-    error: 'wrong_approver',
-    approvalBy: type.approval_by,
-  };
+  return { error: 'wrong_approver', reason: 'manager', approvalBy: type.approval_by };
 }
 
 // Approving consumes balance, so it runs in one transaction with the request
