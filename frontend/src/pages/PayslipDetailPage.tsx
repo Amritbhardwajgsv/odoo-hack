@@ -118,6 +118,15 @@ export default function PayslipDetailPage() {
               <span>Worked Days</span>
               <input type="text" value={payslip.workedDays ?? '—'} readOnly />
             </label>
+
+            <label className="field">
+              <span>Leave Days</span>
+              <input
+                type="text"
+                value={payslip.leaveDays > 0 ? `${payslip.leaveDays} (payroll-affecting)` : '—'}
+                readOnly
+              />
+            </label>
           </div>
 
           <section className="notes-box">

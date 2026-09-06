@@ -195,6 +195,7 @@ export default function PayrunDetailPage() {
               <th>Employee</th>
               <th>Warning</th>
               <th>Worked</th>
+              <th>Leave</th>
               <th>Basic</th>
               <th>Gross</th>
               <th>Net</th>
@@ -208,6 +209,7 @@ export default function PayrunDetailPage() {
                 <td>{payslip.employeeName}</td>
                 <td>{warningCell(payslip)}</td>
                 <td>{payslip.workedDays ?? '—'}</td>
+                <td>{payslip.leaveDays > 0 ? payslip.leaveDays : '—'}</td>
                 <td className="money">{formatMoney(payslip.basicAmount ?? 0)}</td>
                 <td className="money">{formatMoney(payslip.grossAmount ?? 0)}</td>
                 <td className="money">{formatMoney(payslip.netAmount ?? 0)}</td>
@@ -231,7 +233,7 @@ export default function PayrunDetailPage() {
             ))}
             {slips.payslips.length === 0 && (
               <tr>
-                <td colSpan={8} className="empty-row">
+                <td colSpan={9} className="empty-row">
                   {payrun.status === 'draft'
                     ? 'Nothing computed yet. Compute this payrun to generate payslips.'
                     : 'No payslips in this payrun.'}

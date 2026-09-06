@@ -265,6 +265,28 @@ async function updatePayrun(id, { name, department, periodStart, periodEnd, sala
 const parser = new Parser();
 
 // Categories that build the gross, versus the ones taken back off it.
+// Up to 18 approved, payroll-affecting leave days are paid for each payrun.
+// Everything over that allowance is logged as an Unpaid Leave deduction on
+// the generated payslip. Keeping it here (instead of a salary rule) means
+// payroll cannot accidentally omit the deduction from a structure.
+const PAID_LEAVE_DAYS_PER_PERIOD = 18;
+
+function calendarDaysBetween(periodStart, periodEnd) {
+  const start = new Date(`${periodStart}T00:00:00Z`);
+  const end = new Date(`${periodEnd}T00:00:00Z`);
+  return Math.max(1, Math.round((end - start) / 86_400_000) + 1);
+}
+
+function unpaidLeaveDeduction({ gross, leaveDays, periodStart, periodEnd }) {
+  const unpaidDays = Math.max(0, Number(leaveDays) - PAID_LEAVE_DAYS_PER_PERIOD);
+  if (unpaidDays === 0 || gross <= 0) return { days: unpaidDays, amount: 0 };
+
+  // Daily rate is based on the payrun's actual calendar period, so it also
+  // works for a partial or non-monthly run.
+  const dailyRate = Number(gross) / calendarDaysBetween(periodStart, periodEnd);
+  return { days: unpaidDays, amount: round(dailyRate * unpaidDays) };
+}
+
 const ADDS_TO_GROSS = ['basic', 'allowance'];
 const REDUCES_NET = ['deduction', 'contribution'];
 
@@ -275,8 +297,13 @@ function round(value) {
 // One employee's payslip lines, in rule sequence. Each rule can see the
 // wage, the running basic/gross, the worked days, and every rule code that
 // has already been computed - which is what makes formula rules useful.
-function computeLines(rules, { wage, workedDays }) {
-  const scope = { wage, worked_days: workedDays, basic: 0, gross: 0, net: 0 };
+function computeLines(rules, { wage, workedDays, leaveDays }) {
+  // leave_days is available to formula rules the same way wage/worked_days
+  // are - e.g. an unpaid-leave deduction rule could read
+  // "wage - (wage / 30) * leave_days". Nothing deducts automatically; the
+  // policy is the salary structure's to define, this only makes the fact
+  // visible to it.
+  const scope = { wage, worked_days: workedDays, leave_days: leaveDays, basic: 0, gross: 0, net: 0 };
   const lines = [];
   const problems = [];
   let basic = 0;
@@ -352,6 +379,21 @@ const PAYRUN_EMPLOYEES_SQL = `
            WHERE a.employee_id = pe.employee_id
              AND a.attendance_date BETWEEN $2 AND $3
              AND a.status IN ('present', 'late')) AS worked_days,
+         -- Approved leave under a type configured to affect payroll, summed
+         -- across every request that overlaps this period (in calendar
+         -- days actually inside the period, not the request's full span,
+         -- in case it starts or ends outside it). This is what makes a
+         -- Time Off Type's "payroll integration" setting do something.
+         (SELECT COALESCE(SUM(
+                   LEAST(r.date_to, $3::date) - GREATEST(r.date_from, $2::date) + 1
+                 ), 0)
+            FROM time_off_requests r
+            JOIN time_off_types t ON t.id = r.time_off_type_id
+           WHERE r.employee_id = pe.employee_id
+             AND r.status = 'approved'
+             AND t.affects_payroll = true
+             AND r.date_from <= $3
+             AND r.date_to   >= $2) AS leave_days,
          -- Paying somebody twice for the same dates out of two payruns is
          -- the expensive mistake, so it is detected while computing.
          dup.payrun_name AS duplicate_of
@@ -425,7 +467,10 @@ function warningsFor(row, net, problems, periodEnd) {
     });
   }
 
-  if (Number(row.worked_days) === 0) {
+  // Approved, payroll-affecting leave explains a worked-days gap - it isn't
+  // something for a person to go double-check the way a genuine unexplained
+  // absence is.
+  if (Number(row.worked_days) === 0 && Number(row.leave_days) === 0) {
     warnings.push({
       code: 'no_attendance',
       severity: 'advisory',
@@ -487,19 +532,21 @@ async function compute(id) {
       }
 
       const workedDays = Number(row.worked_days);
+      const leaveDays = Number(row.leave_days);
       const { lines, gross, net, problems } = computeLines(rules, {
         wage: Number(row.wage),
         workedDays,
+        leaveDays,
       });
 
       const { rows: inserted } = await client.query(
         `INSERT INTO payslips
            (payrun_id, employee_id, contract_id, period_start, period_end,
-            worked_days, gross_amount, net_amount, status, computed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'computed', now())
+            worked_days, leave_days, gross_amount, net_amount, status, computed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'computed', now())
          RETURNING id`,
         [id, row.employee_id, row.contract_id, payrun.periodStart, payrun.periodEnd,
-         workedDays, gross, net]
+         workedDays, leaveDays, gross, net]
       );
       const payslipId = inserted[0].id;
 
@@ -621,6 +668,7 @@ function mapPayslip(row) {
     periodStart: row.period_start,
     periodEnd: row.period_end,
     workedDays: row.worked_days === null ? null : Number(row.worked_days),
+    leaveDays: row.leave_days === null || row.leave_days === undefined ? 0 : Number(row.leave_days),
     basicAmount: row.basic_amount === undefined ? null : Number(row.basic_amount),
     grossAmount: row.gross_amount === null ? null : Number(row.gross_amount),
     netAmount: row.net_amount === null ? null : Number(row.net_amount),

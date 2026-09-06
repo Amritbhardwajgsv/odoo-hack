@@ -61,7 +61,7 @@ async function createRequest(request, response) {
   }
 
   try {
-    response.status(201).json(await service.createRequest(parsed.data));
+    respondToDecision(await service.createRequest(parsed.data), response, 201);
   } catch (error) {
     if (!handleConstraintError(error, response)) throw error;
   }
@@ -82,12 +82,20 @@ async function updateRequest(request, response) {
   }
 }
 
-function respondToDecision(result, response) {
+function respondToDecision(result, response, successStatus = 200) {
   if (result.error === 'not_found') {
     return response.status(404).json({ message: 'Time off request not found' });
   }
+  if (result.error === 'invalid_type') {
+    return response.status(400).json({ message: 'Referenced time off type does not exist' });
+  }
   if (result.error === 'already_approved') {
     return response.status(409).json({ message: 'This request has already been approved' });
+  }
+  if (result.error === 'wrong_approver') {
+    return response.status(403).json({
+      message: `This leave type requires approval by the employee's manager (or an admin), not just any HR staff.`,
+    });
   }
   if (result.error === 'insufficient_allocation') {
     return response.status(409).json({
@@ -96,15 +104,19 @@ function respondToDecision(result, response) {
         : 'This leave type needs an allocation, and this employee has no approved balance covering those dates',
     });
   }
-  return response.json(result.request);
+  return response.status(successStatus).json(result.request);
+}
+
+function approverFrom(request) {
+  return { userId: request.user.sub, employeeId: request.user.employeeId, roles: request.user.roles };
 }
 
 async function approve(request, response) {
-  respondToDecision(await service.approveRequest(request.params.id, request.user.sub), response);
+  respondToDecision(await service.approveRequest(request.params.id, approverFrom(request)), response);
 }
 
 async function refuse(request, response) {
-  respondToDecision(await service.refuseRequest(request.params.id, request.user.sub), response);
+  respondToDecision(await service.refuseRequest(request.params.id, approverFrom(request)), response);
 }
 
 // ------------------------------------------------------------------ types

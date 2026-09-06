@@ -97,15 +97,107 @@ async function findRequestById(id, client = pool) {
   return rows[0] ? mapRequest(rows[0]) : null;
 }
 
+// Shared by createRequest's auto-approval path and approveRequest's manual
+// one: given a locked/loaded request row and its type, find and consume an
+// approved allocation covering the dates, if the type requires one at all.
+// The caller owns the transaction and rolls back on an error result.
+async function consumeAllocationIfNeeded(client, request, type) {
+  if (!type.requires_allocation) return { allocationId: null };
+
+  // Oldest first so balances are drawn down in the order they expire.
+  const { rows: allocations } = await client.query(
+    `SELECT id, allocated_amount - taken_amount AS remaining
+       FROM time_off_allocations
+      WHERE employee_id = $1
+        AND time_off_type_id = $2
+        AND status = 'approved'
+        AND valid_from <= $3
+        AND (valid_to IS NULL OR valid_to >= $4)
+      ORDER BY valid_from
+      FOR UPDATE`,
+    [request.employee_id, request.time_off_type_id, request.date_from, request.date_to]
+  );
+
+  const usable = allocations.find((a) => Number(a.remaining) >= Number(request.duration));
+  if (!usable) {
+    const available = allocations.reduce((sum, a) => sum + Number(a.remaining), 0);
+    return {
+      error: 'insufficient_allocation',
+      needed: Number(request.duration),
+      available: allocations.length ? available : 0,
+      hasAllocation: allocations.length > 0,
+    };
+  }
+
+  await client.query(
+    'UPDATE time_off_allocations SET taken_amount = taken_amount + $1 WHERE id = $2',
+    [request.duration, usable.id]
+  );
+  return { allocationId: usable.id };
+}
+
+// A type with requires_approval = false has no manual review step at all -
+// the request is created already approved, consuming its allocation
+// immediately if one is needed. An explicit `status` (HR backfilling a
+// historical record) is always honoured exactly as given and bypasses this
+// decision entirely, same as before.
 async function createRequest({ employeeId, timeOffTypeId, dateFrom, dateTo, reason, status }) {
   const duration = durationBetween(dateFrom, dateTo);
-  const { rows } = await pool.query(
-    `INSERT INTO time_off_requests
-       (employee_id, time_off_type_id, date_from, date_to, duration, status, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-    [employeeId, timeOffTypeId, dateFrom, dateTo, duration, status || 'submitted', reason || null]
-  );
-  return findRequestById(rows[0].id);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    if (status) {
+      const { rows } = await client.query(
+        `INSERT INTO time_off_requests
+           (employee_id, time_off_type_id, date_from, date_to, duration, status, reason)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [employeeId, timeOffTypeId, dateFrom, dateTo, duration, status, reason || null]
+      );
+      await client.query('COMMIT');
+      return { request: await findRequestById(rows[0].id) };
+    }
+
+    const { rows: typeRows } = await client.query(
+      'SELECT * FROM time_off_types WHERE id = $1',
+      [timeOffTypeId]
+    );
+    const type = typeRows[0];
+    if (!type) {
+      await client.query('ROLLBACK');
+      return { error: 'invalid_type' };
+    }
+
+    const { rows: inserted } = await client.query(
+      `INSERT INTO time_off_requests
+         (employee_id, time_off_type_id, date_from, date_to, duration, status, reason)
+       VALUES ($1, $2, $3, $4, $5, 'submitted', $6) RETURNING *`,
+      [employeeId, timeOffTypeId, dateFrom, dateTo, duration, reason || null]
+    );
+    const request = inserted[0];
+
+    if (!type.requires_approval) {
+      const consumption = await consumeAllocationIfNeeded(client, request, type);
+      if (consumption.error) {
+        await client.query('ROLLBACK');
+        return consumption;
+      }
+      await client.query(
+        `UPDATE time_off_requests
+            SET status = 'approved', approved_at = now(), allocation_id = $1
+          WHERE id = $2`,
+        [consumption.allocationId, request.id]
+      );
+    }
+
+    await client.query('COMMIT');
+    return { request: await findRequestById(request.id) };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function updateRequest(id, { timeOffTypeId, dateFrom, dateTo, reason }) {
@@ -129,10 +221,30 @@ async function updateRequest(id, { timeOffTypeId, dateFrom, dateTo, reason }) {
   return rows[0] ? findRequestById(id) : null;
 }
 
+// A type's approvalBy names who is trusted to decide it. "Manager" means
+// the requester's own direct manager (or an admin, as the standing
+// override every role check in this app allows) - anything else (Officer,
+// blank) keeps the existing behaviour: any HR staff, enforced already at
+// the router level, is enough.
+async function checkApprovalAuthority(client, request, type, approver) {
+  if (type.approval_by !== 'Manager' || approver.roles.includes('admin')) return null;
+
+  const { rows } = await client.query('SELECT manager_id FROM employees WHERE id = $1', [
+    request.employee_id,
+  ]);
+  const managerId = rows[0]?.manager_id;
+  if (managerId && managerId === approver.employeeId) return null;
+
+  return {
+    error: 'wrong_approver',
+    approvalBy: type.approval_by,
+  };
+}
+
 // Approving consumes balance, so it runs in one transaction with the request
 // row locked. The status guard makes a second approval a no-op rather than a
 // second deduction.
-async function approveRequest(id, approverUserId) {
+async function approveRequest(id, approver) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -157,48 +269,23 @@ async function approveRequest(id, approverUserId) {
     );
     const type = typeRows[0];
 
-    let allocationId = null;
+    const authError = await checkApprovalAuthority(client, request, type, approver);
+    if (authError) {
+      await client.query('ROLLBACK');
+      return authError;
+    }
 
-    if (type.requires_allocation) {
-      // Pick an approved allocation that covers the dates and still has
-      // enough left, oldest first so balances expire in order.
-      const { rows: allocations } = await client.query(
-        `SELECT id, allocated_amount - taken_amount AS remaining
-           FROM time_off_allocations
-          WHERE employee_id = $1
-            AND time_off_type_id = $2
-            AND status = 'approved'
-            AND valid_from <= $3
-            AND (valid_to IS NULL OR valid_to >= $4)
-          ORDER BY valid_from
-          FOR UPDATE`,
-        [request.employee_id, request.time_off_type_id, request.date_from, request.date_to]
-      );
-
-      const usable = allocations.find((a) => Number(a.remaining) >= Number(request.duration));
-      if (!usable) {
-        await client.query('ROLLBACK');
-        const available = allocations.reduce((sum, a) => sum + Number(a.remaining), 0);
-        return {
-          error: 'insufficient_allocation',
-          needed: Number(request.duration),
-          available: allocations.length ? available : 0,
-          hasAllocation: allocations.length > 0,
-        };
-      }
-
-      await client.query(
-        'UPDATE time_off_allocations SET taken_amount = taken_amount + $1 WHERE id = $2',
-        [request.duration, usable.id]
-      );
-      allocationId = usable.id;
+    const consumption = await consumeAllocationIfNeeded(client, request, type);
+    if (consumption.error) {
+      await client.query('ROLLBACK');
+      return consumption;
     }
 
     await client.query(
       `UPDATE time_off_requests
           SET status = 'approved', approved_by = $1, approved_at = now(), allocation_id = $2
         WHERE id = $3`,
-      [approverUserId, allocationId, id]
+      [approver.userId, consumption.allocationId, id]
     );
 
     await client.query('COMMIT');
@@ -212,7 +299,7 @@ async function approveRequest(id, approverUserId) {
 }
 
 // Refusing an already-approved request returns the balance it consumed.
-async function refuseRequest(id, approverUserId) {
+async function refuseRequest(id, approver) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -227,6 +314,16 @@ async function refuseRequest(id, approverUserId) {
     }
 
     const request = locked[0];
+    const { rows: typeRows } = await client.query(
+      'SELECT * FROM time_off_types WHERE id = $1',
+      [request.time_off_type_id]
+    );
+    const authError = await checkApprovalAuthority(client, request, typeRows[0], approver);
+    if (authError) {
+      await client.query('ROLLBACK');
+      return authError;
+    }
+
     if (request.status === 'approved' && request.allocation_id) {
       await client.query(
         'UPDATE time_off_allocations SET taken_amount = GREATEST(taken_amount - $1, 0) WHERE id = $2',
@@ -238,7 +335,7 @@ async function refuseRequest(id, approverUserId) {
       `UPDATE time_off_requests
           SET status = 'refused', approved_by = $1, approved_at = now(), allocation_id = NULL
         WHERE id = $2`,
-      [approverUserId, id]
+      [approver.userId, id]
     );
 
     await client.query('COMMIT');

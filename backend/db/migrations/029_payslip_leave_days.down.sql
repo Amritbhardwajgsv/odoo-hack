@@ -1,0 +1,1 @@
+ALTER TABLE payslips DROP COLUMN IF EXISTS leave_days;

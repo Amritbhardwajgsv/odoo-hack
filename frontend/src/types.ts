@@ -363,6 +363,10 @@ export interface Payslip {
   periodStart: string;
   periodEnd: string;
   workedDays: number | null;
+  // Approved leave under a type configured to affect payroll, overlapping
+  // this period - what makes a Time Off Type's payroll integration visible
+  // on the payslip that actually paid for the period.
+  leaveDays: number;
   basicAmount: number | null;
   grossAmount: number | null;
   netAmount: number | null;

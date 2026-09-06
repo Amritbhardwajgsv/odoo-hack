@@ -75,6 +75,21 @@ export default function MyPayslipDetailPage() {
         {error && <p className="error-banner">{error}</p>}
 
         <div className="detail-card">
+          <div className="field-grid">
+            <label className="field">
+              <span>Worked Days</span>
+              <input type="text" value={payslip.workedDays ?? '—'} readOnly />
+            </label>
+            <label className="field">
+              <span>Leave Days</span>
+              <input
+                type="text"
+                value={payslip.leaveDays > 0 ? `${payslip.leaveDays} (payroll-affecting)` : '—'}
+                readOnly
+              />
+            </label>
+          </div>
+
           <section className="notes-box">
             <h3>Salary Computation</h3>
             <table className="admin-table">

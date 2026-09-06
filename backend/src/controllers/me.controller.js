@@ -98,14 +98,25 @@ async function createTimeOffRequest(request, response) {
   }
 
   try {
-    const created = await timeOffService.createRequest({
+    // No `status` here - the service decides for itself whether this type
+    // needs a manual approval step at all, same as the HR-facing form.
+    const result = await timeOffService.createRequest({
       ...parsed.data,
       // Self-service can only ever file a request for yourself - never take
       // an employeeId from the body, however it got there.
       employeeId: request.user.employeeId,
-      status: 'submitted',
     });
-    response.status(201).json(created);
+    if (result.error === 'invalid_type') {
+      return response.status(400).json({ message: 'Referenced time off type does not exist' });
+    }
+    if (result.error === 'insufficient_allocation') {
+      return response.status(409).json({
+        message: result.hasAllocation
+          ? `Not enough balance left: ${result.needed} requested but only ${result.available} remaining`
+          : 'This leave type needs an allocation, and you have no approved balance covering those dates',
+      });
+    }
+    response.status(201).json(result.request);
   } catch (error) {
     if (error.code === '23514' || error.code === '22000') {
       return response.status(400).json({ message: 'The end date must be on or after the start date' });
