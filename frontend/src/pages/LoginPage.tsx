@@ -26,6 +26,7 @@ export default function LoginPage() {
     }
   }
 
+  
   return (
     <main className="auth-page">
       <header className="auth-nav">
@@ -58,7 +59,7 @@ export default function LoginPage() {
             {error && <p className="auth-card__error">{error}</p>}
 
             <button type="submit" disabled={submitting}>
-              {submitting ? 'Signing in...' : 'Continue to workspace -&gt;'}
+              {submitting ? 'Signing in...' : 'Continue to workspace '}
             </button>
           </form>
           <p className="auth-card__note">Accounts and permissions are managed by your administrator.</p>
