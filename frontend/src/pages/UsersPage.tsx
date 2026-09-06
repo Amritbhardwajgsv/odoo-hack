@@ -231,6 +231,12 @@ function UserPanel({
               </option>
             ))}
           </select>
+          {!isEdit && (
+            <p className="notes-box__text" style={{ margin: '-10px 0 16px' }}>
+              Only employees who don&apos;t already have a login are listed here &mdash; everyone
+              else already appears in the table with an account.
+            </p>
+          )}
 
           <label>Work Email *</label>
           <input type="email" value={email} disabled required />
