@@ -228,11 +228,12 @@ export default function TimeOffTypeDetailPage() {
 
         <p className="admin-page__note">
           This type drives whether a request needs an allocation. Who may approve a request or
-          allocation of this type is no longer set here — every decision now follows a fixed role
-          ladder instead: an employee&apos;s own leave needs an HR Manager, HR Payroll, or an
-          admin; an HR Manager&apos;s own needs HR Payroll or an admin; and HR Payroll&apos;s own
-          (either sub-role) needs an admin. Nobody approves their own tier&apos;s leave, and the
-          Approval field above is kept only as a label.
+          allocation of this type is no longer set here — every decision now follows a fixed rule
+          instead: a plain employee&apos;s own leave goes to their own assigned manager (or an
+          admin), falling back to any HR Manager, HR Payroll, or admin only if no manager is
+          assigned; an HR Manager&apos;s own needs HR Payroll or an admin; and HR Payroll&apos;s
+          own (either sub-role) needs an admin. Nobody approves their own tier&apos;s leave, and
+          the Approval field above is kept only as a label.
         </p>
 
         <button className="btn btn--ghost" onClick={() => navigate('/time-off-types')}>

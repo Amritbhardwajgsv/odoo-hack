@@ -227,11 +227,16 @@ async function updateRequest(id, { timeOffTypeId, dateFrom, dateTo, reason }) {
 // higher rung than them - never a peer, never themselves, and a rung above
 // can always reach down to anyone below it. This supersedes a type's own
 // approvalBy (Manager/Officer) for deciding *who* may approve - that field
-// is still stored and shown on the Time Off Type screen, but the org's
-// reporting-line "manager_id" is no longer consulted here at all, since
-// an employee with no manager assigned previously had no valid approver
-// but an admin. Two payroll sub-roles share a rung: HR Payroll User and
-// HR Payroll Manager are peers of each other, not of HR Manager.
+// is still stored and shown on the Time Off Type screen, but no longer
+// drives authority. Two payroll sub-roles share a rung: HR Payroll User
+// and HR Payroll Manager are peers of each other, not of HR Manager.
+//
+// One exception at the bottom rung: a plain employee's own assigned
+// manager (the org's parent/child line, employees.manager_id) is who this
+// specifically routes to when one exists, matching how the reporting line
+// actually works - not just any HR Manager. Only when no manager is
+// assigned does it fall back to the general rung-above rule, so a request
+// never dead-ends the way it used to when manager_id was the only path.
 const HIERARCHY_RANK = { hr_manager: 1, hr_payroll_user: 2, hr_payroll_manager: 2, admin: 3 };
 const HIERARCHY_LABELS = {
   0: 'an HR Manager, HR Payroll, or an admin',
@@ -247,10 +252,21 @@ function rankOf(roles) {
 async function checkHierarchyAuthority(client, targetEmployeeId, approver) {
   if (approver.roles.includes('admin')) return null;
 
-  const { rows } = await client.query('SELECT roles::text[] AS roles FROM users WHERE employee_id = $1', [
-    targetEmployeeId,
-  ]);
+  const { rows } = await client.query(
+    `SELECT e.manager_id, u.roles::text[] AS roles
+       FROM employees e
+       LEFT JOIN users u ON u.employee_id = e.id
+      WHERE e.id = $1`,
+    [targetEmployeeId]
+  );
   const requesterRank = rankOf(rows[0]?.roles ?? []);
+  const managerId = rows[0]?.manager_id ?? null;
+
+  if (requesterRank === 0 && managerId) {
+    if (managerId === approver.employeeId) return null;
+    return { error: 'wrong_approver', reason: 'hierarchy', label: "this employee's own manager (or an admin)" };
+  }
+
   if (rankOf(approver.roles) > requesterRank) return null;
 
   return { error: 'wrong_approver', reason: 'hierarchy', label: HIERARCHY_LABELS[requesterRank] ?? 'an admin' };
