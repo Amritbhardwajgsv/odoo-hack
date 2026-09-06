@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowUpRight,
+  Banknote,
+  BarChart3,
   CalendarClock,
   ChevronRight,
   ClipboardCheck,
   FileText,
   LayoutDashboard,
+  Lock,
+  MailCheck,
+  Palmtree,
   ShieldCheck,
   Sparkles,
+  Timer,
   UsersRound,
   WalletCards,
 } from 'lucide-react';
@@ -58,13 +64,13 @@ const ROLE_FEATURES: (RoleFeature & { emoji: string })[] = [
 
 // What the platform actually does today, for the landing page's feature
 // grid - concrete capabilities rather than abstract role-marketing copy.
-const FEATURES: { emoji: string; title: string; text: string }[] = [
-  { emoji: '⏱️', title: 'Live Attendance', text: 'Check in and out from a live widget on your workspace - no punch cards, no paperwork.' },
-  { emoji: '🌴', title: 'Time Off', text: 'Request leave, track your balance, and approve requests in one click.' },
-  { emoji: '💰', title: 'Payroll Engine', text: 'Salary rules, automatic payslips, and PDFs generated in seconds.' },
-  { emoji: '📊', title: 'Payroll Dashboard', text: 'Department costs, salary trends, and warnings - all live, nothing hardcoded.' },
-  { emoji: '🔐', title: 'Role-Based Access', text: 'Five focused workspaces behind one login, each seeing only what is theirs.' },
-  { emoji: '📧', title: 'Payslip Delivery', text: 'Validated payslips emailed straight from the payrun, queued and reliable.' },
+const FEATURES: { Icon: typeof UsersRound; title: string; text: string }[] = [
+  { Icon: Timer, title: 'Live Attendance', text: 'Check in and out from a live widget on your workspace - no punch cards, no paperwork.' },
+  { Icon: Palmtree, title: 'Time Off', text: 'Request leave, track your balance, and approve requests in one click.' },
+  { Icon: Banknote, title: 'Payroll Engine', text: 'Salary rules, automatic payslips, and PDFs generated in seconds.' },
+  { Icon: BarChart3, title: 'Payroll Dashboard', text: 'Department costs, salary trends, and warnings - all live, nothing hardcoded.' },
+  { Icon: Lock, title: 'Role-Based Access', text: 'Five focused workspaces behind one login, each seeing only what is theirs.' },
+  { Icon: MailCheck, title: 'Payslip Delivery', text: 'Validated payslips emailed straight from the payrun, queued and reliable.' },
 ];
 
 const ROLE_PRIORITY: Role[] = ['admin', 'hr_payroll_manager', 'hr_manager', 'hr_payroll_user', 'employee'];
@@ -266,13 +272,18 @@ export default function HomePage() {
           <h2>Real HR &amp; payroll,<br />not a mockup.</h2>
         </div>
         <div className="feature-grid">
-          {FEATURES.map((feature) => (
-            <article className="feature-card" key={feature.title}>
-              <span className="feature-card__emoji">{feature.emoji}</span>
-              <h3>{feature.title}</h3>
-              <p>{feature.text}</p>
-            </article>
-          ))}
+          {FEATURES.map((feature) => {
+            const Icon = feature.Icon;
+            return (
+              <article className="feature-card" key={feature.title}>
+                <div className="feature-card__icon">
+                  <Icon size={30} strokeWidth={1.75} />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+              </article>
+            );
+          })}
         </div>
       </section>
 
