@@ -234,8 +234,9 @@ function NewAllocationPanel({ onClose, onSaved }: { onClose: () => void; onSaved
           <label>Allocated *</label>
           <input
             type="number"
-            min="1"
+            min="0.5"
             step="0.5"
+            
             value={allocated}
             onChange={(e) => setAllocated(e.target.value)}
             required
