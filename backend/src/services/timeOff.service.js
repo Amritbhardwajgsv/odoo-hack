@@ -221,61 +221,39 @@ async function updateRequest(id, { timeOffTypeId, dateFrom, dateTo, reason }) {
   return rows[0] ? findRequestById(id) : null;
 }
 
-// Independent of what a type's own approvalBy says: HR/payroll staff
-// approving their own time off must escalate up the org's role hierarchy
-// rather than being decided by a peer at the same level - an HR Manager's
-// request needs HR Payroll, and HR Payroll's own request needs an admin.
-// Checked in this order (most senior first) so someone holding both an HR
-// Payroll and an HR Manager role is held to the stricter, payroll rule.
-// There is nothing above admin, so an admin's own requests are never
-// specially escalated - the universal admin bypass just below covers them.
-const HR_HIERARCHY = [
-  { requesterRoles: ['hr_payroll_manager', 'hr_payroll_user'], approverRoles: ['admin'], label: 'an admin' },
-  {
-    requesterRoles: ['hr_manager'],
-    approverRoles: ['hr_payroll_user', 'hr_payroll_manager'],
-    label: 'HR Payroll (or an admin)',
-  },
-];
+// One consistent role ladder for every time off decision, on requests AND
+// allocations: Employee < HR Manager < HR Payroll < Admin. Whoever decides
+// a person's own leave (or their own allocation) must sit at a strictly
+// higher rung than them - never a peer, never themselves, and a rung above
+// can always reach down to anyone below it. This supersedes a type's own
+// approvalBy (Manager/Officer) for deciding *who* may approve - that field
+// is still stored and shown on the Time Off Type screen, but the org's
+// reporting-line "manager_id" is no longer consulted here at all, since
+// an employee with no manager assigned previously had no valid approver
+// but an admin. Two payroll sub-roles share a rung: HR Payroll User and
+// HR Payroll Manager are peers of each other, not of HR Manager.
+const HIERARCHY_RANK = { hr_manager: 1, hr_payroll_user: 2, hr_payroll_manager: 2, admin: 3 };
+const HIERARCHY_LABELS = {
+  0: 'an HR Manager, HR Payroll, or an admin',
+  1: 'HR Payroll or an admin',
+  2: 'an admin',
+};
 
-function hierarchyFor(requesterRoles) {
-  return HR_HIERARCHY.find((tier) => tier.requesterRoles.some((role) => requesterRoles.includes(role)));
+function rankOf(roles) {
+  return roles.reduce((max, role) => Math.max(max, HIERARCHY_RANK[role] ?? 0), 0);
 }
 
-// Shared by time off requests AND allocations - a person holding an HR-tier
-// role must have their own record (either kind) decided by the required
-// tier above them, never by a peer or themselves. Independent of whatever
-// per-request or per-type rule the caller layers on top of this.
+// Shared by time off requests AND allocations.
 async function checkHierarchyAuthority(client, targetEmployeeId, approver) {
   if (approver.roles.includes('admin')) return null;
 
-  const { rows } = await client.query('SELECT roles FROM users WHERE employee_id = $1', [targetEmployeeId]);
-  const tier = hierarchyFor(rows[0]?.roles ?? []);
-  if (!tier) return null;
-  if (tier.approverRoles.some((role) => approver.roles.includes(role))) return null;
-  return { error: 'wrong_approver', reason: 'hierarchy', label: tier.label };
-}
-
-// A type's approvalBy names who is trusted to decide it, for a requester
-// with no special HR-tier role of their own. "Manager" means the
-// requester's own direct manager (or an admin, as the standing override
-// every role check in this app allows) - anything else (Officer, blank)
-// keeps the existing behaviour: any HR staff, enforced already at the
-// router level, is enough.
-async function checkApprovalAuthority(client, request, type, approver) {
-  const hierarchyError = await checkHierarchyAuthority(client, request.employee_id, approver);
-  if (hierarchyError) return hierarchyError;
-  if (approver.roles.includes('admin')) return null;
-
-  if (type.approval_by !== 'Manager') return null;
-
-  const { rows } = await client.query('SELECT manager_id FROM employees WHERE id = $1', [
-    request.employee_id,
+  const { rows } = await client.query('SELECT roles::text[] AS roles FROM users WHERE employee_id = $1', [
+    targetEmployeeId,
   ]);
-  const managerId = rows[0]?.manager_id;
-  if (managerId && managerId === approver.employeeId) return null;
+  const requesterRank = rankOf(rows[0]?.roles ?? []);
+  if (rankOf(approver.roles) > requesterRank) return null;
 
-  return { error: 'wrong_approver', reason: 'manager', approvalBy: type.approval_by };
+  return { error: 'wrong_approver', reason: 'hierarchy', label: HIERARCHY_LABELS[requesterRank] ?? 'an admin' };
 }
 
 // Approving consumes balance, so it runs in one transaction with the request
@@ -306,7 +284,7 @@ async function approveRequest(id, approver) {
     );
     const type = typeRows[0];
 
-    const authError = await checkApprovalAuthority(client, request, type, approver);
+    const authError = await checkHierarchyAuthority(client, request.employee_id, approver);
     if (authError) {
       await client.query('ROLLBACK');
       return authError;
@@ -351,11 +329,7 @@ async function refuseRequest(id, approver) {
     }
 
     const request = locked[0];
-    const { rows: typeRows } = await client.query(
-      'SELECT * FROM time_off_types WHERE id = $1',
-      [request.time_off_type_id]
-    );
-    const authError = await checkApprovalAuthority(client, request, typeRows[0], approver);
+    const authError = await checkHierarchyAuthority(client, request.employee_id, approver);
     if (authError) {
       await client.query('ROLLBACK');
       return authError;

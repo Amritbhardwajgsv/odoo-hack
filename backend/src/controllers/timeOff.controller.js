@@ -93,11 +93,9 @@ function respondToDecision(result, response, successStatus = 200) {
     return response.status(409).json({ message: 'This request has already been approved' });
   }
   if (result.error === 'wrong_approver') {
-    const message =
-      result.reason === 'hierarchy'
-        ? `This employee's role requires approval by ${result.label}, not a peer at the same level.`
-        : `This leave type requires approval by the employee's manager (or an admin), not just any HR staff.`;
-    return response.status(403).json({ message });
+    return response.status(403).json({
+      message: `This employee's role requires approval by ${result.label}, not a peer at the same level.`,
+    });
   }
   if (result.error === 'insufficient_allocation') {
     return response.status(409).json({
