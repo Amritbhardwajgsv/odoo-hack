@@ -354,6 +354,7 @@ export interface Payslip {
   structureName: string | null;
   employeeId: string;
   employeeName: string;
+  employeeCode: string | null;
   employeeEmail: string | null;
   department: Department;
   jobTitle: string | null;

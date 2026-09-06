@@ -41,9 +41,24 @@ async function blob(path: string): Promise<string> {
   return URL.createObjectURL(await response.blob());
 }
 
+// A plain <a href> can't carry the bearer token, and the browser has no API
+// to "save this object URL as a file" other than faking a click on an
+// anchor with the download attribute set.
+async function download(path: string, filename: string): Promise<void> {
+  const url = await blob(path);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   blob,
+  download,
   post: <T>(path: string, data: unknown) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(data) }),
   patch: <T>(path: string, data: unknown) =>

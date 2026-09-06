@@ -155,8 +155,9 @@ async function payslipPdf(request, response) {
   if (!payslip || payslip.employeeId !== request.user.employeeId) {
     return response.status(404).json({ message: 'Payslip not found' });
   }
+  const disposition = request.query.download ? 'attachment' : 'inline';
   response.setHeader('Content-Type', 'application/pdf');
-  response.setHeader('Content-Disposition', `inline; filename="${payslipFileName(payslip)}"`);
+  response.setHeader('Content-Disposition', `${disposition}; filename="${payslipFileName(payslip)}"`);
   buildPayslipPdf(payslip).pipe(response);
 }
 

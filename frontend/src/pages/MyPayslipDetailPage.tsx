@@ -4,6 +4,7 @@ import AppHeader from '../components/AppHeader';
 import { api, ApiError } from '../api/client';
 import { PAYRUN_STATUS_LABELS, SALARY_CATEGORY_LABELS, type PayslipDetail } from '../types';
 import { formatMoney, formatPeriodDate } from './PayrunsPage';
+import { payslipFileName } from '../utils/payslip';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
@@ -31,6 +32,16 @@ export default function MyPayslipDetailPage() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not open the payslip PDF');
+    }
+  }
+
+  async function downloadPdf() {
+    if (!payslip) return;
+    setError(null);
+    try {
+      await api.download(`/api/me/payslips/${id}/pdf?download=1`, payslipFileName(payslip));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not download the payslip PDF');
     }
   }
 
@@ -65,6 +76,9 @@ export default function MyPayslipDetailPage() {
 
         <div className="detail-actions">
           <button className="btn btn--ghost" onClick={openPdf}>
+            View PDF
+          </button>
+          <button className="btn btn--ghost" onClick={downloadPdf}>
             Download PDF
           </button>
           <span className={`payrun-status payrun-status--${payslip.status}`}>

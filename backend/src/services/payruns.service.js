@@ -294,15 +294,21 @@ function round(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
 
+// Leave under a payroll-affecting type is paid up to this many days per
+// payrun period; anything beyond it is an automatic Unpaid Leave deduction,
+// applied the same way for every structure rather than left to each one to
+// remember to configure. A fixed 30-day month is the standard simplification
+// this kind of per-day rate uses.
+const UNPAID_LEAVE_THRESHOLD_DAYS = 18;
+const DAYS_PER_MONTH_FOR_PRORATION = 30;
+
 // One employee's payslip lines, in rule sequence. Each rule can see the
 // wage, the running basic/gross, the worked days, and every rule code that
 // has already been computed - which is what makes formula rules useful.
 function computeLines(rules, { wage, workedDays, leaveDays }) {
-  // leave_days is available to formula rules the same way wage/worked_days
-  // are - e.g. an unpaid-leave deduction rule could read
-  // "wage - (wage / 30) * leave_days". Nothing deducts automatically; the
-  // policy is the salary structure's to define, this only makes the fact
-  // visible to it.
+  // leave_days is also available to formula rules the same way wage/
+  // worked_days are, for a structure that wants its own finer-grained
+  // treatment of leave beyond the automatic Unpaid Leave line below.
   const scope = { wage, worked_days: workedDays, leave_days: leaveDays, basic: 0, gross: 0, net: 0 };
   const lines = [];
   const problems = [];
@@ -365,7 +371,24 @@ function computeLines(rules, { wage, workedDays, leaveDays }) {
     scope.net = round(gross - deducted);
   }
 
-  return { lines, gross, net: round(gross - deducted), problems };
+  // Leave beyond the paid allowance is deducted automatically, as its own
+  // clearly-labelled line - not folded into a salary rule, so it can never
+  // be silently skipped by a structure that doesn't define one.
+  const excessLeaveDays = Math.max(0, round(leaveDays - UNPAID_LEAVE_THRESHOLD_DAYS));
+  if (excessLeaveDays > 0) {
+    const dailyRate = wage / DAYS_PER_MONTH_FOR_PRORATION;
+    const unpaidAmount = round(excessLeaveDays * dailyRate);
+    lines.push({
+      ruleId: null,
+      ruleName: `Unpaid Leave (${excessLeaveDays} day${excessLeaveDays === 1 ? '' : 's'} over the ${UNPAID_LEAVE_THRESHOLD_DAYS}-day allowance)`,
+      category: 'deduction',
+      sequence: 9999,
+      amount: unpaidAmount,
+    });
+    deducted = round(deducted + unpaidAmount);
+  }
+
+  return { lines, gross, net: round(gross - deducted), problems, excessLeaveDays };
 }
 
 const PAYRUN_EMPLOYEES_SQL = `
@@ -424,12 +447,20 @@ const PAYRUN_EMPLOYEES_SQL = `
    ORDER BY e.full_name
 `;
 
-function warningsFor(row, net, problems, periodEnd) {
+function warningsFor(row, net, problems, periodEnd, excessLeaveDays) {
   const warnings = problems.map((message) => ({
     code: 'rule_error',
     severity: 'advisory',
     message,
   }));
+
+  if (excessLeaveDays > 0) {
+    warnings.push({
+      code: 'unpaid_leave',
+      severity: 'advisory',
+      message: `${excessLeaveDays} day${excessLeaveDays === 1 ? '' : 's'} of leave beyond the ${UNPAID_LEAVE_THRESHOLD_DAYS}-day allowance were deducted as unpaid`,
+    });
+  }
 
   if (Number(row.wage) <= 0) {
     warnings.push({
@@ -533,7 +564,7 @@ async function compute(id) {
 
       const workedDays = Number(row.worked_days);
       const leaveDays = Number(row.leave_days);
-      const { lines, gross, net, problems } = computeLines(rules, {
+      const { lines, gross, net, problems, excessLeaveDays } = computeLines(rules, {
         wage: Number(row.wage),
         workedDays,
         leaveDays,
@@ -558,7 +589,7 @@ async function compute(id) {
         );
       }
 
-      for (const warning of warningsFor(row, net, problems, payrun.periodEnd)) {
+      for (const warning of warningsFor(row, net, problems, payrun.periodEnd, excessLeaveDays)) {
         await client.query(
           `INSERT INTO payslip_warnings (payslip_id, code, severity, message)
            VALUES ($1, $2, $3, $4)`,
@@ -659,6 +690,7 @@ function mapPayslip(row) {
     structureName: row.structure_name,
     employeeId: row.employee_id,
     employeeName: row.employee_name,
+    employeeCode: row.employee_code,
     employeeEmail: row.employee_email,
     department: row.department,
     jobTitle: row.job_title,
@@ -685,6 +717,7 @@ function mapPayslip(row) {
 const PAYSLIP_SELECT = `
   SELECT ps.*,
          e.full_name  AS employee_name,
+         e.employee_code,
          e.department AS department,
          e.email      AS employee_email,
          e.bank_account,
@@ -818,4 +851,5 @@ module.exports = {
   listPayslips,
   findPayslipById,
   listUncomputed,
+  UNPAID_LEAVE_THRESHOLD_DAYS,
 };

@@ -377,6 +377,12 @@
   cursor: not-allowed;
 }
 
+.pdf-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .pdf-link {
   border: 0;
   background: transparent;

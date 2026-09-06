@@ -9,6 +9,7 @@ import {
   type PayslipDetail,
 } from '../types';
 import { formatMoney, formatPeriodDate } from './PayrunsPage';
+import { payslipFileName } from '../utils/payslip';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
@@ -43,6 +44,16 @@ export default function PayslipDetailPage() {
     }
   }
 
+  async function downloadPdf() {
+    if (!payslip) return;
+    setError(null);
+    try {
+      await api.download(`/api/payslips/${id}/pdf?download=1`, payslipFileName(payslip));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not download the payslip PDF');
+    }
+  }
+
   if (!payslip) {
     return (
       <div>
@@ -74,6 +85,9 @@ export default function PayslipDetailPage() {
 
         <div className="detail-actions">
           <button className="btn btn--ghost" onClick={openPdf}>
+            View PDF
+          </button>
+          <button className="btn btn--ghost" onClick={downloadPdf}>
             Download PDF
           </button>
           <span className={`payrun-status payrun-status--${payslip.status}`}>

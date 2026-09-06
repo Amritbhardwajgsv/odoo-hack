@@ -5,10 +5,12 @@ import { api, ApiError } from '../api/client';
 import {
   PAYRUN_STATUS_LABELS,
   type Payrun,
+  type Payslip,
   type PayrunPayslips,
   type SendPayslipsResult,
 } from '../types';
 import { formatMoney, formatPeriodDate, warningCell } from './PayrunsPage';
+import { payslipFileName } from '../utils/payslip';
 import './shared.css';
 import './employees.css';
 import './payroll.css';
@@ -98,6 +100,15 @@ export default function PayrunDetailPage() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not open the payslip PDF');
+    }
+  }
+
+  async function downloadPdf(payslip: Payslip) {
+    setError(null);
+    try {
+      await api.download(`/api/payslips/${payslip.id}/pdf?download=1`, payslipFileName(payslip));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not download the payslip PDF');
     }
   }
 
@@ -218,7 +229,7 @@ export default function PayrunDetailPage() {
                     {PAYRUN_STATUS_LABELS[payslip.status]}
                   </span>
                 </td>
-                <td>
+                <td className="pdf-actions">
                   <button
                     className="pdf-link"
                     onClick={(event) => {
@@ -226,7 +237,16 @@ export default function PayrunDetailPage() {
                       openPdf(payslip.id);
                     }}
                   >
-                    PDF
+                    View
+                  </button>
+                  <button
+                    className="pdf-link"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      downloadPdf(payslip);
+                    }}
+                  >
+                    Download
                   </button>
                 </td>
               </tr>
